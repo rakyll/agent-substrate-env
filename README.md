@@ -148,46 +148,20 @@ Each tool call is translated into a shell command executed inside the actor. Arg
 ## Example: end-to-end with curl
 
 ```bash
-SESSION_ID="123e4567-e89b-12d3-a456-426614174000"
-
 # 1. Resume the session
 curl -sX POST localhost:8080/environment/resume \
   -H 'Content-Type: application/json' \
-  -d @- <<EOF
-{
-  "name": "bash-env",
-  "session_id": "$SESSION_ID",
-  "tools": ["bash"]
-}
-EOF
+  -d '{"name":"bash-env","session_id":"123e4567-e89b-12d3-a456-426614174000","tools":["bash"]}'
 
 # 2. Run a tool call
 curl -sX POST localhost:8080/environment \
   -H 'Content-Type: application/json' \
-  -d @- <<EOF
-{
-  "session_id": "$SESSION_ID",
-  "inputs": [
-    {
-      "call_id": "c1",
-      "type": "function",
-      "function": {
-        "name": "bash",
-        "arguments": "{\"command\":\"uname -a\"}"
-      }
-    }
-  ]
-}
-EOF
+  -d '{"session_id":"123e4567-e89b-12d3-a456-426614174000","inputs":[{"call_id":"c1","type":"function","function":{"name":"bash","arguments":"{\"command\":\"uname -a\"}"}}]}'
 
 # 3. Suspend when done
 curl -sX POST localhost:8080/environment/suspend \
   -H 'Content-Type: application/json' \
-  -d @- <<EOF
-{
-  "session_id": "$SESSION_ID"
-}
-EOF
+  -d '{"session_id":"123e4567-e89b-12d3-a456-426614174000"}'
 ```
 
 ---
