@@ -180,7 +180,7 @@ curl -sX POST localhost:8080/environment/suspend \
 
 ## Notes & limitations
 
-- Sessions are held **in memory** — restarting the service loses the cache (actors themselves persist in Agent Substrate). A session must be resumed before `/environment` will accept tool calls.
+- Sessions are held **in memory** — restarting the service loses the cache (actors themselves persist in Agent Substrate).
 - Actor calls to `/process` use a **30s** timeout.
 - A non-zero exit code from a command is surfaced as an error in the tool response `content`.
 
