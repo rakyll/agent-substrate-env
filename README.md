@@ -70,43 +70,31 @@ environments:
 
 ## API
 
-All endpoints accept and return JSON.
+All endpoints accept and return JSON. The environment (`{env}`) and session (`{session_id}`) are always part of the URL path.
 
-### `POST /environment/resume`
+### `POST /v1/environments/{env}/sessions/{session_id}/resume`
 
-Create (if needed) and resume the actor for a session.
+Create (if needed) and resume the actor for the session in `{env}`. No request body.
 
-```json
-{
-  "name": "bash-env",
-  "session_id": "123e4567-e89b-12d3-a456-426614174000"
-}
-```
-
-- `name` — actor template name (**required**)
-- `session_id` — unique session identifier (**required**)
+- `{env}` — client-facing environment name, e.g. `bash-env` (**required**)
+- `{session_id}` — unique session identifier (**required**)
 
 **Response:** `{ "status": "ok" }`
 
 
-### `POST /environment/suspend`
+### `POST /v1/environments/{env}/sessions/{session_id}/suspend`
 
-Suspend the actor and evict the session.
-
-```json
-{ "session_id": "123e4567-e89b-12d3-a456-426614174000" }
-```
+Suspend the session's actor. No request body.
 
 **Response:** `{ "status": "ok" }`
 
 
-### `POST /environment/{env_name}`
+### `POST /v1/environments/{env}/sessions/{session_id}`
 
-Execute one or more tool calls in the session's actor. The session must have been resumed first. Only tools configured/enabled for the `{env_name}` can be executed.
+Execute one or more tool calls in the session's actor. The session must have been resumed first. Only tools configured/enabled for `{env}` can be executed.
 
 ```json
 {
-  "session_id": "123e4567-e89b-12d3-a456-426614174000",
   "env_variables": [
     { "name": "MY_SECRET", "value": "c3ebfdfdk12345..." }
   ],
@@ -123,7 +111,6 @@ Execute one or more tool calls in the session's actor. The session must have bee
 }
 ```
 
-- `session_id` — unique session identifier (**required**)
 - `env_variables` — env vars merged into command executions for this call
 - `inputs` — list of tool calls to execute (**required**)
 
