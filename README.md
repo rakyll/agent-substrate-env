@@ -140,9 +140,9 @@ All tool calls run in-process in this binary. The `bash` tool executes the comma
 | Tool          | Arguments                    | Behavior                                            |
 | ------------- | ---------------------------- | --------------------------------------------------- |
 | `bash`        | `command` | Runs the command locally with `sh -c` (`os/exec`); per-call env vars are merged in. |
-| `read_file`   | `path`                       | Reads and returns the file contents (`os.ReadFile`). |
-| `write_file`  | `path`, `content`            | Creates parent dirs (`os.MkdirAll`) and writes the content (`os.WriteFile`). |
-| `list_dir`    | `path` (defaults to `.`)     | Lists the directory (`os.ReadDir`), `ls -la` style. |
+| `read_file`   | `path` | Reads and returns the file contents (`os.ReadFile`). |
+| `write_file`  | `path`, `content` | Creates parent dirs (`os.MkdirAll`) and writes the content (`os.WriteFile`). |
+| `list_dir`    | `path` | Lists the directory (`os.ReadDir`), `ls -la` style. |
 
 ---
 
