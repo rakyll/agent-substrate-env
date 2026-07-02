@@ -111,7 +111,7 @@ func handleExecute(store *session.SessionManager) http.HandlerFunc {
 			return
 		}
 
-		responses, err := store.Execute(r.Context(), req.SessionID, req.Inputs)
+		responses, err := store.Execute(r.Context(), req.SessionID, req.EnvVariables, req.Inputs)
 		if err != nil {
 			log.Printf("failed to execute tool calls for session %s: %v", req.SessionID, err)
 			http.Error(w, fmt.Sprintf("failed to execute tool calls: %v", err), http.StatusInternalServerError)

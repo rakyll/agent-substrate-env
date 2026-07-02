@@ -23,7 +23,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/agent-substrate/substrate/pkg/proto/ateapipb"
@@ -33,18 +32,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Session tracks the metadata and environment configuration for a single session.
-type Session struct {
-	SessionID    string
-	TemplateName string
-	EnvVars      map[string]string
-	Tools        []string
-}
-
-// SessionManager manages active sandboxed sessions and handles communication with Agent Substrate.
+// SessionManager handles communication with Agent Substrate.
 type SessionManager struct {
-	mu           sync.RWMutex
-	sessions     map[string]*Session
 	ateapiAddr   string
 	atenetAddr   string
 	ateNamespace string
@@ -54,7 +43,6 @@ type SessionManager struct {
 // NewSessionManager creates a new SessionManager.
 func NewSessionManager(ateapiAddr, ateNamespace string, environments map[string]EnvDetails) *SessionManager {
 	return &SessionManager{
-		sessions:     make(map[string]*Session),
 		ateapiAddr:   ateapiAddr,
 		ateNamespace: ateNamespace,
 		environments: environments,
@@ -115,27 +103,11 @@ func (s *SessionManager) Resume(ctx context.Context, req ResumeRequest) error {
 		return fmt.Errorf("failed to resume actor: %w", err)
 	}
 
-	// Convert EnvVariables slice to map for easier lookups
-	envVars := make(map[string]string)
-	for _, env := range req.EnvVariables {
-		envVars[env.Name] = env.Value
-	}
-
-	// 3. Cache session configuration
-	s.mu.Lock()
-	s.sessions[req.SessionID] = &Session{
-		SessionID:    req.SessionID,
-		TemplateName: req.Name,
-		EnvVars:      envVars,
-		Tools:        tools,
-	}
-	s.mu.Unlock()
-
-	log.Printf("Session %s successfully resumed and cached", req.SessionID)
+	log.Printf("Session %s successfully resumed", req.SessionID)
 	return nil
 }
 
-// Suspend suspends the underlying sandboxed actor and removes the session from the cache.
+// Suspend suspends the underlying sandboxed actor.
 func (s *SessionManager) Suspend(ctx context.Context, sessionID string) error {
 	if sessionID == "" {
 		return fmt.Errorf("session_id cannot be empty")
@@ -155,33 +127,28 @@ func (s *SessionManager) Suspend(ctx context.Context, sessionID string) error {
 		return fmt.Errorf("failed to suspend actor: %w", err)
 	}
 
-	s.mu.Lock()
-	delete(s.sessions, sessionID)
-	s.mu.Unlock()
-
-	log.Printf("Session %s successfully suspended and removed from cache", sessionID)
+	log.Printf("Session %s successfully suspended", sessionID)
 	return nil
 }
 
 // Execute parses and runs multiple tool calls inside the sandboxed actor.
-func (s *SessionManager) Execute(ctx context.Context, sessionID string, toolCalls []ToolCall) ([]ToolResponse, error) {
-	s.mu.RLock()
-	_, exists := s.sessions[sessionID]
-	s.mu.RUnlock()
-
-	if !exists {
-		// If it's not in cache, try to resume with a default template name "bash-env" just in case,
-		// or return an error. Let's return an error as per standard lifecycle.
-		return nil, fmt.Errorf("session %s not initialized or resumed; call /environment/resume first", sessionID)
+func (s *SessionManager) Execute(ctx context.Context, sessionID string, envVariables []EnvVariable, toolCalls []ToolCall) ([]ToolResponse, error) {
+	if sessionID == "" {
+		return nil, fmt.Errorf("session_id cannot be empty")
 	}
-
 	if len(toolCalls) == 0 {
 		return nil, fmt.Errorf("no valid tool calls found in inputs")
 	}
 
+	// Convert EnvVariables slice to map for easier lookups
+	envVars := make(map[string]string)
+	for _, env := range envVariables {
+		envVars[env.Name] = env.Value
+	}
+
 	var responses []ToolResponse
 	for _, tc := range toolCalls {
-		resp := s.executeToolCall(ctx, sessionID, tc)
+		resp := s.executeToolCall(ctx, sessionID, envVars, tc)
 		responses = append(responses, resp)
 	}
 
@@ -189,7 +156,7 @@ func (s *SessionManager) Execute(ctx context.Context, sessionID string, toolCall
 }
 
 // executeToolCall routes a single tool call to the actor's /process endpoint.
-func (s *SessionManager) executeToolCall(ctx context.Context, sessionID string, tc ToolCall) ToolResponse {
+func (s *SessionManager) executeToolCall(ctx context.Context, sessionID string, executionEnv map[string]string, tc ToolCall) ToolResponse {
 	// OpenResponses uses call_id; OpenAI uses id. Let's support both.
 	callID := tc.CallID
 	if callID == "" {
@@ -268,8 +235,8 @@ func (s *SessionManager) executeToolCall(ctx context.Context, sessionID string, 
 		return toolResp
 	}
 
-	// Execute command via the atenet HTTP router pointing to the actor
-	stdout, err := s.executeInActor(ctx, sessionID, cmd, env)
+	// Execute command via the HTTP router pointing to the actor
+	stdout, err := s.executeInActor(ctx, sessionID, cmd, executionEnv, env)
 	if err != nil {
 		toolResp.Content = fmt.Sprintf("Error: %v", err)
 		return toolResp
@@ -280,24 +247,18 @@ func (s *SessionManager) executeToolCall(ctx context.Context, sessionID string, 
 }
 
 // executeInActor sends a process execution request to the actor's /process HTTP endpoint.
-func (s *SessionManager) executeInActor(ctx context.Context, sessionID string, cmd []string, customEnv map[string]string) (string, error) {
+func (s *SessionManager) executeInActor(ctx context.Context, sessionID string, cmd []string, executionEnv, customEnv map[string]string) (string, error) {
 	host := s.atenetAddr
 	if host == "" {
 		host = fmt.Sprintf("%s.actors.resources.substrate.ate.dev", sessionID)
 	}
 	url := fmt.Sprintf("http://%s/process", host)
 
-	// Merge session environment variables and custom tool environment variables
+	// Merge execution environment variables and custom tool environment variables
 	envVars := make(map[string]string)
-	s.mu.RLock()
-	sess, exists := s.sessions[sessionID]
-	if exists {
-		for k, v := range sess.EnvVars {
-			envVars[k] = v
-		}
+	for k, v := range executionEnv {
+		envVars[k] = v
 	}
-	s.mu.RUnlock()
-
 	for k, v := range customEnv {
 		envVars[k] = v
 	}

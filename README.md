@@ -80,16 +80,12 @@ Create (if needed) and resume the actor for a session.
 ```json
 {
   "name": "bash-env",
-  "session_id": "123e4567-e89b-12d3-a456-426614174000",
-  "env_variables": [
-    { "name": "MY_SECRET", "value": "c3ebfdfdk12345..." }
-  ]
+  "session_id": "123e4567-e89b-12d3-a456-426614174000"
 }
 ```
 
 - `name` — actor template name (**required**)
 - `session_id` — unique session identifier (**required**)
-- `env_variables` — env vars merged into every command run in this session
 
 **Response:** `{ "status": "ok" }`
 
@@ -112,6 +108,9 @@ Execute one or more tool calls in the session's actor. The session must have bee
 ```json
 {
   "session_id": "123e4567-e89b-12d3-a456-426614174000",
+  "env_variables": [
+    { "name": "MY_SECRET", "value": "c3ebfdfdk12345..." }
+  ],
   "inputs": [
     {
       "call_id": "call_1",
@@ -124,6 +123,10 @@ Execute one or more tool calls in the session's actor. The session must have bee
   ]
 }
 ```
+
+- `session_id` — unique session identifier (**required**)
+- `env_variables` — env vars merged into command executions for this call
+- `inputs` — list of tool calls to execute (**required**)
 
 **Response:**
 
@@ -162,10 +165,10 @@ curl -sX POST localhost:8080/environment/resume \
   -H 'Content-Type: application/json' \
   -d '{"name":"bash-env","session_id":"123e4567-e89b-12d3-a456-426614174000"}'
 
-# 2. Run a tool call
+# 2. Run a tool call with env vars
 curl -sX POST localhost:8080/environment \
   -H 'Content-Type: application/json' \
-  -d '{"session_id":"123e4567-e89b-12d3-a456-426614174000","inputs":[{"call_id":"c1","type":"function","function":{"name":"bash","arguments":"{\"command\":\"uname -a\"}"}}]}'
+  -d '{"session_id":"123e4567-e89b-12d3-a456-426614174000","env_variables":[{"name":"MY_SECRET","value":"c3ebfdfdk12345..."}],"inputs":[{"call_id":"c1","type":"function","function":{"name":"bash","arguments":"{\"command\":\"uname -a\"}"}}]}'
 
 # 3. Suspend when done
 curl -sX POST localhost:8080/environment/suspend \
@@ -177,7 +180,7 @@ curl -sX POST localhost:8080/environment/suspend \
 
 ## Notes & limitations
 
-- Sessions are held **in memory** — restarting the service loses the cache (actors themselves persist in Agent Substrate).
+- The service is completely **stateless** — restarting the service is safe and does not lose any session state (actors persist in Agent Substrate).
 - A non-zero exit code from a command is surfaced as an error in the tool response `content`.
 
 ## License

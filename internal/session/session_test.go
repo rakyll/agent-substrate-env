@@ -62,13 +62,8 @@ func TestSessionManager_Execute(t *testing.T) {
 	store.atenetAddr = atenetAddr
 	sessionID := "test-session-123"
 
-	// Register session manually in the store
-	store.sessions[sessionID] = &Session{
-		SessionID:    sessionID,
-		TemplateName: "bash-env",
-		EnvVars: map[string]string{
-			"SESSION_VAR": "session_val",
-		},
+	envVars := []EnvVariable{
+		{Name: "SESSION_VAR", Value: "session_val"},
 	}
 
 	// 1. Test "bash" tool call
@@ -84,7 +79,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resps, err := store.Execute(context.Background(), sessionID, inputs)
+		resps, err := store.Execute(context.Background(), sessionID, envVars, inputs)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -127,7 +122,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		_, err := store.Execute(context.Background(), sessionID, inputs)
+		_, err := store.Execute(context.Background(), sessionID, nil, inputs)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -164,7 +159,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resps, err := store.Execute(context.Background(), sessionID, inputs)
+		resps, err := store.Execute(context.Background(), sessionID, nil, inputs)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -206,7 +201,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resps, err := store.Execute(context.Background(), sessionID, inputs)
+		resps, err := store.Execute(context.Background(), sessionID, nil, inputs)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}

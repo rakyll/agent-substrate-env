@@ -22,9 +22,8 @@ type EnvVariable struct {
 
 // ResumeRequest is the payload for POST /environment/resume.
 type ResumeRequest struct {
-	Name         string        `json:"name"` // Template name, e.g. "bash-env"
-	SessionID    string        `json:"session_id"`
-	EnvVariables []EnvVariable `json:"env_variables"`
+	Name      string `json:"name"` // Template name, e.g. "bash-env"
+	SessionID string `json:"session_id"`
 }
 
 // EnvDetails holds predefined environment details.
@@ -40,8 +39,9 @@ type SuspendRequest struct {
 
 // ExecuteRequest is the payload for POST /environment.
 type ExecuteRequest struct {
-	SessionID string     `json:"session_id"`
-	Inputs    []ToolCall `json:"inputs"`
+	SessionID    string        `json:"session_id"`
+	EnvVariables []EnvVariable `json:"env_variables"`
+	Inputs       []ToolCall    `json:"inputs"`
 }
 
 // ExecuteResponse is the response payload for POST /environment.
