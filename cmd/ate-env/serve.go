@@ -85,7 +85,9 @@ func handleResume(sm *session.SessionManager) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"}); err != nil {
+			log.Printf("failed to encode resume response for session %s: %v", sessionID, err)
+		}
 	}
 }
 
@@ -101,7 +103,9 @@ func handleSuspend(sm *session.SessionManager) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"}); err != nil {
+			log.Printf("failed to encode suspend response for session %s: %v", sessionID, err)
+		}
 	}
 }
 
@@ -124,12 +128,16 @@ func handleExecute(sm *session.SessionManager) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(session.ExecuteResponse{Outputs: responses})
+		if err := json.NewEncoder(w).Encode(session.ExecuteResponse{Outputs: responses}); err != nil {
+			log.Printf("failed to encode execute response for session %s: %v", sessionID, err)
+		}
 	}
 }
 
 // handleHealthz handles health check requests.
 func handleHealthz(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"status": "healthy"}); err != nil {
+		log.Printf("failed to encode healthz response: %v", err)
+	}
 }
