@@ -3,16 +3,10 @@
 A lightweight **environment service** for [Agent Substrate](https://github.com/agent-substrate/substrate). It exposes a small API that lets an agent runtime
 run tools — file operations and shell commands — inside session-tenant sandboxed actors.
 
-Each session maps to a sandboxed **actor** in Agent Substrate. The service ships
-as a single `ate-env` binary with two subcommands:
-
-- **`ate-env serve`** — the control plane. Manages actor lifecycle (create →
-  resume → suspend) via the Agent Substrate control API.
-- **`ate-env actor`** — the in-actor tool executor. Runs inside the sandboxed
-  actor and executes incoming tool calls in-process against the local
-  environment, returning tool call responses.
-
-Both subcommands read the same `config.yaml`.
+Each session maps to a sandboxed **actor** in Agent Substrate. The service runs
+as `ate-env serve`: it manages the actor's lifecycle (create → resume → suspend)
+via the Agent Substrate control API, and executes incoming tool calls in-process
+against the local environment. It returns tool call responses.
 
 ---
 
@@ -30,12 +24,9 @@ flowchart LR
     env -->|tool call operations| actor
 ```
 
-1. **`resume`** — creates an actor (idempotent) via Agent Substrate and resumes it.
+1. **`resume`** — creates and resume existing actors.
 1. **`suspend`** — suspends the actor.
-1. **`execute`** — runs tool calls in-process (local file ops and shell commands) and returns tool responses.
-
-The service is stateless: every request identifies both the environment and the
-session in the URL path, so no per-session state is kept in memory.
+1. **`execute`** — runs tool calls the the actor and returns tool call responses.
 
 ---
 
@@ -47,11 +38,9 @@ Configuration is loaded from `config.yaml` in the working directory. If the file
 # Address/port for this HTTP service to listen on
 listen: ":8080"
 
+# Agent Substrate configuration.
 ate:
-  # Agent Substrate ateapi gRPC server
   ateapi: "ateapi.ate-system.svc.cluster.local:443"
-
-  # Namespace used to create/resume actors
   namespace: "default"
 
 # Predefined environments mapping client-facing names to Agent Substrate templates.
@@ -67,8 +56,8 @@ environments:
 
 | Field           | Default            | Description                                             |
 | --------------- | ------------------ | ------------------------------------------------------- |
-| `listen`        | `:8080`            | Bind address. A bare port (e.g. `8080`) is auto-prefixed with `:`. |
-| `ate.ateapi`    | `ateapi.ate-system.svc.cluster.local:443` | Agent Substrate gRPC address (create/resume/suspend actors). |
+| `listen`        | `:8080`            | Bind address.|
+| `ate.ateapi`    | `ateapi.ate-system.svc.cluster.local:443` | Agent Substrate Control API endpoint.|
 | `ate.namespace` | `default`          | Actor template namespace.                               |
 | `environments`  | `bash-env` -> `bash-env-template` | List of predefined client-facing environment to Agent Substrate template mappings. |
 
@@ -79,15 +68,7 @@ environments:
 ```bash
 # Control plane: actor lifecycle (resume, suspend).
 ate-env serve --config config.yaml
-
-# In-actor tool executor: runs tool calls.
-ate-env actor --config config.yaml
 ```
-
-`--config` defaults to `config.yaml` in the working directory. Both subcommands
-bind to the `listen` address from their config; run them with separate configs
-(or hosts/ports) when co-located.
-
 ---
 
 ## API
