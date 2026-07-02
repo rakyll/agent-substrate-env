@@ -106,7 +106,7 @@ func handleExecute(store *SessionStore) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(responses)
+		json.NewEncoder(w).Encode(ExecuteResponse{Outputs: responses})
 	}
 }
 

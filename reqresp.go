@@ -14,18 +14,10 @@
 
 package main
 
-import (
-	"fmt"
-)
-
 // EnvVariable represents a key-value environment variable pair.
 type EnvVariable struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
-}
-
-func (e *EnvVariable) String() string {
-	return fmt.Sprintf("Name: %s, Value: %s", e.Name, e.Value)
 }
 
 // ResumeRequest is the payload for POST /environment/resume.
@@ -33,7 +25,7 @@ type ResumeRequest struct {
 	Name         string        `json:"name"` // Template name, e.g. "bash-env"
 	SessionID    string        `json:"session_id"`
 	EnvVariables []EnvVariable `json:"env_variables"`
-	Tools        []string      `json:"tools"`
+	Tools        []string      `json:"tools"` // enabled tools
 }
 
 // SuspendRequest is the payload for POST /environment/suspend.
@@ -45,6 +37,11 @@ type SuspendRequest struct {
 type ExecuteRequest struct {
 	SessionID string     `json:"session_id"`
 	Inputs    []ToolCall `json:"inputs"`
+}
+
+// ExecuteResponse is the response payload for POST /environment.
+type ExecuteResponse struct {
+	Outputs []ToolResponse `json:"outputs"`
 }
 
 // ToolCall represents a requested tool call.
