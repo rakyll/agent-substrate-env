@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 
 	"github.com/agent-substrate/substrate/pkg/proto/ateapipb"
@@ -146,12 +145,6 @@ func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName 
 		return nil, fmt.Errorf("unknown environment %q", envName)
 	}
 
-	// Convert EnvVariables slice to map for easier lookups
-	envVars := make(map[string]string)
-	for _, env := range envVariables {
-		envVars[env.Name] = env.Value
-	}
-
 	var responses []ToolResponse
 	for _, tc := range toolCalls {
 		// Verify if tool is enabled in this environment
@@ -168,7 +161,7 @@ func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName 
 			continue
 		}
 
-		resp := s.executeToolCall(ctx, envVars, tc)
+		resp := s.executeToolCall(ctx, envVariables, tc)
 		responses = append(responses, resp)
 	}
 
@@ -185,7 +178,7 @@ func isToolAllowed(tool string, allowed []string) bool {
 }
 
 // executeToolCall runs a single tool call locally in this binary.
-func (s *SessionManager) executeToolCall(ctx context.Context, executionEnv map[string]string, tc ToolCall) ToolResponse {
+func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []EnvVariable, tc ToolCall) ToolResponse {
 	// OpenResponses uses call_id; OpenAI uses id. Let's support both.
 	callID := tc.CallID
 	if callID == "" {
@@ -266,7 +259,7 @@ func (s *SessionManager) executeToolCall(ctx context.Context, executionEnv map[s
 		}
 		// Run the shell command locally in this binary.
 		cmd := []string{"sh", "-c", command}
-		stdout, err := runCommand(ctx, cmd, executionEnv)
+		stdout, err := runCommand(ctx, cmd)
 		if err != nil {
 			toolResp.Content = fmt.Sprintf("Error: %v", err)
 			return toolResp
@@ -281,18 +274,12 @@ func (s *SessionManager) executeToolCall(ctx context.Context, executionEnv map[s
 
 // runCommand executes cmd locally in this binary, layering executionEnv on top
 // of the current process environment, and returns its stdout.
-func runCommand(ctx context.Context, cmd []string, executionEnv map[string]string) (string, error) {
+func runCommand(ctx context.Context, cmd []string) (string, error) {
 	if len(cmd) == 0 {
 		return "", fmt.Errorf("empty command")
 	}
 
 	c := exec.CommandContext(ctx, cmd[0], cmd[1:]...)
-
-	// Start from this process's environment, then merge per-call env vars.
-	c.Env = os.Environ()
-	for k, v := range executionEnv {
-		c.Env = append(c.Env, fmt.Sprintf("%s=%s", k, v))
-	}
 
 	var stdout, stderr bytes.Buffer
 	c.Stdout = &stdout
