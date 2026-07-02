@@ -22,8 +22,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/rakyll/agent-substrate-env/internal/config"
-	"github.com/rakyll/agent-substrate-env/internal/session"
+	"github.com/rakyll/ate-env/internal/config"
+	"github.com/rakyll/ate-env/internal/session"
 )
 
 func main() {

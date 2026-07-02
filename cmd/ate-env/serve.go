@@ -22,7 +22,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/rakyll/agent-substrate-env/internal/session"
+	"github.com/rakyll/ate-env/internal/session"
 )
 
 // newServeCmd builds the "serve" subcommand: the environment service. It drives

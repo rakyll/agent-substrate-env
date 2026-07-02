@@ -1,4 +1,4 @@
-module github.com/rakyll/agent-substrate-env
+module github.com/rakyll/ate-env
 
 go 1.26.3
 

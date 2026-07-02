@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rakyll/agent-substrate-env/internal/config"
+	"github.com/rakyll/ate-env/internal/config"
 )
 
 func TestSessionManager_Execute(t *testing.T) {
