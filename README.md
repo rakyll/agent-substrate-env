@@ -48,6 +48,11 @@ ate:
 
   # Namespace used to create/resume actors
   namespace: "default"
+
+# Predefined environments mapping client-facing names to Agent Substrate templates.
+environments:
+  - name: "bash-env"
+    template: "bash-env-template"
 ```
 
 | Field           | Default            | Description                                             |
@@ -55,6 +60,7 @@ ate:
 | `listen`        | `:8080`            | Bind address. A bare port (e.g. `8080`) is auto-prefixed with `:`. |
 | `ate.ateapi`    | `ateapi.ate-system.svc.cluster.local:443` | Agent Substrate gRPC address (create/resume/suspend actors). |
 | `ate.namespace` | `default`          | Actor template namespace.                               |
+| `environments`  | `bash-env` -> `bash-env-template` | List of predefined client-facing environment to Agent Substrate template mappings. |
 
 ---
 
@@ -169,7 +175,6 @@ curl -sX POST localhost:8080/environment/suspend \
 ## Notes & limitations
 
 - Sessions are held **in memory** — restarting the service loses the cache (actors themselves persist in Agent Substrate).
-- Actor calls to `/process` use a **30s** timeout.
 - A non-zero exit code from a command is surfaced as an error in the tool response `content`.
 
 ## License

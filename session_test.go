@@ -58,7 +58,7 @@ func TestSessionManager_Execute(t *testing.T) {
 	// Parse host:port from testServer.URL (skip http://)
 	atenetAddr := testServer.URL[len("http://"):]
 
-	store := NewSessionManager("localhost:8080", "default")
+	store := NewSessionManager("localhost:8080", "default", nil)
 	store.atenetAddr = atenetAddr
 	sessionID := "test-session-123"
 
@@ -244,6 +244,9 @@ listen: ":9090"
 ate:
   ateapi: "grpc.example.com:443"
   namespace: "my-custom-ns"
+environments:
+  - name: "bash-env"
+    template: "bash-env-template"
 `
 	tmpFile, err := os.CreateTemp("", "config-*.yaml")
 	if err != nil {
@@ -269,5 +272,11 @@ ate:
 	}
 	if cfg.Ate.Namespace != "my-custom-ns" {
 		t.Errorf("expected namespace 'my-custom-ns', got '%s'", cfg.Ate.Namespace)
+	}
+	if len(cfg.Environments) != 1 {
+		t.Fatalf("expected 1 environment, got %d", len(cfg.Environments))
+	}
+	if cfg.Environments[0].Name != "bash-env" || cfg.Environments[0].Template != "bash-env-template" {
+		t.Errorf("unexpected environment mapping: %+v", cfg.Environments[0])
 	}
 }

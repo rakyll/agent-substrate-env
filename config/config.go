@@ -26,10 +26,17 @@ type AteConfig struct {
 	Namespace string `yaml:"namespace"`
 }
 
+// EnvironmentConfig represents a predefined environment mapping.
+type EnvironmentConfig struct {
+	Name     string `yaml:"name"`
+	Template string `yaml:"template"`
+}
+
 // Config represents the schema of the YAML configuration file.
 type Config struct {
-	Listen string    `yaml:"listen"`
-	Ate    AteConfig `yaml:"ate"`
+	Listen       string              `yaml:"listen"`
+	Ate          AteConfig           `yaml:"ate"`
+	Environments []EnvironmentConfig `yaml:"environments"`
 }
 
 // Default returns a Config initialized with default values.
@@ -39,6 +46,9 @@ func Default() *Config {
 		Ate: AteConfig{
 			Ateapi:    "ateapi.ate-system.svc.cluster.local:443",
 			Namespace: "default",
+		},
+		Environments: []EnvironmentConfig{
+			{Name: "bash-env", Template: "bash-env-template"},
 		},
 	}
 }
@@ -68,6 +78,9 @@ func Load(path string) (*Config, error) {
 	}
 	if parsed.Ate.Namespace != "" {
 		cfg.Ate.Namespace = parsed.Ate.Namespace
+	}
+	if len(parsed.Environments) > 0 {
+		cfg.Environments = parsed.Environments
 	}
 
 	return cfg, nil

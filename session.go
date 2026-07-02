@@ -48,14 +48,16 @@ type SessionManager struct {
 	ateapiAddr   string
 	atenetAddr   string
 	ateNamespace string
+	environments map[string]string
 }
 
 // NewSessionManager creates a new SessionManager.
-func NewSessionManager(ateapiAddr, ateNamespace string) *SessionManager {
+func NewSessionManager(ateapiAddr, ateNamespace string, environments map[string]string) *SessionManager {
 	return &SessionManager{
 		sessions:     make(map[string]*Session),
 		ateapiAddr:   ateapiAddr,
 		ateNamespace: ateNamespace,
+		environments: environments,
 	}
 }
 
@@ -84,12 +86,19 @@ func (s *SessionManager) Resume(ctx context.Context, req ResumeRequest) error {
 	}
 	defer conn.Close()
 
+	templateName := req.Name
+	if mapped, exists := s.environments[req.Name]; exists {
+		templateName = mapped
+		log.Printf("Creating actor %s with template %s (mapped from %s) in namespace %s...", req.SessionID, templateName, req.Name, s.ateNamespace)
+	} else {
+		log.Printf("Creating actor %s with template %s in namespace %s...", req.SessionID, templateName, s.ateNamespace)
+	}
+
 	// 1. Create Actor (idempotent, ignore AlreadyExists)
-	log.Printf("Creating actor %s with template %s in namespace %s...", req.SessionID, req.Name, s.ateNamespace)
 	_, err = cli.CreateActor(ctx, &ateapipb.CreateActorRequest{
 		ActorId:                req.SessionID,
 		ActorTemplateNamespace: s.ateNamespace,
-		ActorTemplateName:      req.Name,
+		ActorTemplateName:      templateName,
 	})
 	if err != nil && status.Code(err) != codes.AlreadyExists {
 		return fmt.Errorf("failed to create actor: %w", err)

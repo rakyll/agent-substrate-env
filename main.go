@@ -34,7 +34,11 @@ func main() {
 	log.Printf("Starting Agent Substrate environment service...")
 	log.Printf("Listening Address: %s", cfg.Listen)
 
-	store := NewSessionManager(cfg.Ate.Ateapi, cfg.Ate.Namespace)
+	envs := make(map[string]string)
+	for _, env := range cfg.Environments {
+		envs[env.Name] = env.Template
+	}
+	store := NewSessionManager(cfg.Ate.Ateapi, cfg.Ate.Namespace, envs)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /environment/resume", handleResume(store))

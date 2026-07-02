@@ -10,3 +10,8 @@ ate:
   # Agent Substrate namespace to create/resume actors
   namespace: "default"
 
+# Predefined environments mapping client-facing names to Agent Substrate templates.
+environments:
+  - name: "bash-env"
+    template: "bash-env-template"
+
