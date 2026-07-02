@@ -56,8 +56,6 @@ ate:
 | `ate.ateapi`    | `ateapi.ate-system.svc.cluster.local:443` | Agent Substrate gRPC address (create/resume/suspend actors). |
 | `ate.namespace` | `default`          | Actor template namespace.                               |
 
-> The gRPC connection to `ateapi` uses TLS with `InsecureSkipVerify` — intended for local/dev use.
-
 ---
 
 ## API
