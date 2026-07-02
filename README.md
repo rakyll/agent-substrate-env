@@ -77,7 +77,7 @@ All endpoints accept and return JSON. The environment (`{env}`) and session (`{s
 
 ### `POST /v1/environments/{env}/sessions/{session_id}/resume`
 
-Create (if needed) and resume the actor for the session in `{env}`. No request body.
+Create (if needed) and resume the actor for the session in `{env}`.
 
 - `{env}` — client-facing environment name, e.g. `bash-env` (**required**)
 - `{session_id}` — unique session identifier (**required**)
@@ -87,7 +87,7 @@ Create (if needed) and resume the actor for the session in `{env}`. No request b
 
 ### `POST /v1/environments/{env}/sessions/{session_id}/suspend`
 
-Suspend the session's actor. No request body.
+Suspend the session's actor.
 
 **Response:** `{ "status": "ok" }`
 
