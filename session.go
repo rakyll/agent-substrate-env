@@ -60,7 +60,7 @@ func NewSessionManager(ateapiAddr, atenetAddr, ateNamespace string) *SessionMana
 	}
 }
 
-// dialAteAPI creates a new gRPC client connection to the Agent Substrate Control API.
+// dialAteAPI creates a new gRPC client connection to the Agent Substrate API.
 func (s *SessionManager) dialAteAPI() (ateapipb.ControlClient, *grpc.ClientConn, error) {
 	creds := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
 	conn, err := grpc.NewClient(s.ateapiAddr, grpc.WithTransportCredentials(creds))

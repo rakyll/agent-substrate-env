@@ -7,29 +7,27 @@ into operations executed inside the actor.
 
 ---
 
-## How it works
+## Overview
 
 ```
                  ┌──────────────────────────────┐
- Agent runtime   │      agent-substrate-env     │      Agent Substrate
+ Agent runtime   │      agent-substrate-env     │
  ─────────────►  │                              │
-                 │  SessionManager              │                  ┌───────────┐
-   /resume  ───► │   ├─ Resume               ───┼────────────────► │  Control  │
-   /suspend ───► │   ├─ Suspend              ───┼────────────────► │   plane   │
+                 │  Session operations          │                  ┌───────────┐
+   /resume  ───► │   ├─ Resume               ───┼────────────────► │   Agent   │
+   /suspend ───► │   ├─ Suspend              ───┼────────────────► │ Substrate │
    /environment► │   └─ Execute tool calls   ───┼───────┐          └───────────┘
                  └──────────────────────────────┘       │
                                                         ▼
                                                    ┌───────────┐
-                                                   │   Actor   │  POST /process
+                                                   │   Actor   │
                                                    │ (sandbox) │  → runs operations
                                                    └───────────┘
 ```
 
-1. **`/environment/resume`** — creates the actor (idempotent) via the `ateapi` gRPC control plane, resumes it, and caches the session's env vars + enabled tools in memory.
-2. **`/environment`** — parses each tool call, maps it to a shell command, and forwards it to the actor's `/process` endpoint through the `atenet` HTTP router. Session env vars are merged into every command.
-3. **`/environment/suspend`** — suspends the actor and drops the session from the in-memory cache.
-
-Actors are addressed by setting the HTTP `Host` header to `<session_id>.actors.resources.substrate.ate.dev` so the `atenet` router can route to the right sandbox.
+1. **`/environment/resume`** — creates the actor (idempotent) via the `ateapi` gRPC Agent Substrate, resumes it, and caches the session's env vars + enabled tools in memory.
+1. **`/environment/suspend`** — suspends the actor and drops the session from the in-memory cache.
+1. **`/environment`** — parses each tool call, maps it to a shell command, and forwards it to the actor's `/process` endpoint through the `atenet` HTTP router. Session env vars are merged into every command.
 
 ---
 
@@ -42,7 +40,7 @@ Configuration is loaded from `config.yaml` in the working directory. If the file
 listen: ":8080"
 
 ate:
-  # Agent Substrate ateapi gRPC control server
+  # Agent Substrate ateapi gRPC server
   ateapi: "localhost:8080"
 
   # Agent Substrate atenet HTTP router
@@ -55,7 +53,7 @@ ate:
 | Field           | Default            | Description                                             |
 | --------------- | ------------------ | ------------------------------------------------------- |
 | `listen`        | `:8080`            | Bind address. A bare port (e.g. `8080`) is auto-prefixed with `:`. |
-| `ate.ateapi`    | `localhost:8080`   | gRPC control-plane address (create/resume/suspend actors). |
+| `ate.ateapi`    | `localhost:8080`   | Agent Substrate gRPC address (create/resume/suspend actors). |
 | `ate.atenet`    | `localhost:8000`   | HTTP router address that fronts the actors.             |
 | `ate.namespace` | `default`          | Actor template namespace.                               |
 
@@ -63,7 +61,7 @@ ate:
 
 ---
 
-## HTTP API
+## API
 
 All endpoints accept and return JSON.
 
@@ -76,7 +74,7 @@ Create (if needed) and resume the actor for a session.
   "name": "bash-env",
   "session_id": "123e4567-e89b-12d3-a456-426614174000",
   "env_variables": [
-    { "name": "MY_VAR", "value": "hello" }
+    { "name": "MY_SECRET", "value": "c3ebfdfdk12345..." }
   ],
   "tools": ["bash", "read_file", "write_file", "list_dir"]
 }
