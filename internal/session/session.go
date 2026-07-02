@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 
 	"github.com/agent-substrate/substrate/pkg/proto/ateapipb"
@@ -154,8 +155,8 @@ func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName 
 				callID = tc.ID
 			}
 			responses = append(responses, ToolResponse{
-				Name:    tc.Function.Name,
-				CallID:  callID,
+				Name:   tc.Function.Name,
+				CallID: callID,
 				Output: fmt.Sprintf("Error: tool '%s' is not enabled in environment '%s'", tc.Function.Name, envName),
 			})
 			continue
@@ -183,6 +184,12 @@ func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []Env
 	callID := tc.CallID
 	if callID == "" {
 		callID = tc.ID
+	}
+
+	// Set the per-call envVariables on the current process environment so
+	// tool executions (e.g. bash) pick them up, adding or overriding as needed.
+	for _, ev := range envVariables {
+		os.Setenv(ev.Name, ev.Value)
 	}
 
 	resp := ToolResponse{
