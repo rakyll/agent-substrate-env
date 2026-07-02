@@ -47,7 +47,7 @@ ate:
 environments:
   - name: "bash-env"
     template: "bash-env-template"
-    enabled_tools:
+    allowed_tools:
       - "bash"
       - "read_file"
       - "write_file"

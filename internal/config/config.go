@@ -30,7 +30,7 @@ type AteConfig struct {
 type EnvironmentConfig struct {
 	Name         string   `yaml:"name"`
 	Template     string   `yaml:"template"`
-	EnabledTools []string `yaml:"enabled_tools"`
+	AllowedTools []string `yaml:"allowed_tools"`
 }
 
 // Config represents the schema of the YAML configuration file.
@@ -52,7 +52,7 @@ func Default() *Config {
 			{
 				Name:         "bash-env",
 				Template:     "bash-env-template",
-				EnabledTools: []string{"bash", "read_file", "write_file", "list_dir"},
+				AllowedTools: []string{"bash", "read_file", "write_file", "list_dir"},
 			},
 		},
 	}

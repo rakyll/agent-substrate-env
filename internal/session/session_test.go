@@ -177,7 +177,7 @@ ate:
 environments:
   - name: "bash-env"
     template: "bash-env-template"
-    enabled_tools:
+    allowed_tools:
       - "bash"
 `
 	tmpFile, err := os.CreateTemp("", "config-*.yaml")
@@ -212,7 +212,7 @@ environments:
 	if env.Name != "bash-env" || env.Template != "bash-env-template" {
 		t.Errorf("unexpected environment mapping: %+v", env)
 	}
-	if len(env.EnabledTools) != 1 || env.EnabledTools[0] != "bash" {
-		t.Errorf("unexpected environment tools: %v", env.EnabledTools)
+	if len(env.AllowedTools) != 1 || env.AllowedTools[0] != "bash" {
+		t.Errorf("unexpected environment tools: %v", env.AllowedTools)
 	}
 }

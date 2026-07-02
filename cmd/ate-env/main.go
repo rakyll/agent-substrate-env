@@ -55,7 +55,7 @@ func newSessionManager(path string) (*config.Config, *session.SessionManager, er
 	for _, env := range cfg.Environments {
 		envs[env.Name] = session.EnvDetails{
 			TemplateName: env.Template,
-			Tools:        env.EnabledTools,
+			Tools:        env.AllowedTools,
 		}
 	}
 	store := session.NewSessionManager(cfg.Ate.Ateapi, cfg.Ate.Atespace, envs)
