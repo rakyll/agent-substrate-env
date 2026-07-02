@@ -39,7 +39,7 @@ func main() {
 	for _, env := range cfg.Environments {
 		envs[env.Name] = session.EnvDetails{
 			TemplateName: env.Template,
-			Tools:        env.Tools,
+			Tools:        env.EnabledTools,
 		}
 	}
 	store := session.NewSessionManager(cfg.Ate.Ateapi, cfg.Ate.Namespace, envs)

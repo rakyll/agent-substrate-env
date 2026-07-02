@@ -28,9 +28,9 @@ type AteConfig struct {
 
 // EnvironmentConfig represents a predefined environment mapping.
 type EnvironmentConfig struct {
-	Name     string   `yaml:"name"`
-	Template string   `yaml:"template"`
-	Tools    []string `yaml:"tools"`
+	Name         string   `yaml:"name"`
+	Template     string   `yaml:"template"`
+	EnabledTools []string `yaml:"enabled_tools"`
 }
 
 // Config represents the schema of the YAML configuration file.
@@ -50,9 +50,9 @@ func Default() *Config {
 		},
 		Environments: []EnvironmentConfig{
 			{
-				Name:     "bash-env",
-				Template: "bash-env-template",
-				Tools:    []string{"bash", "read_file", "write_file", "list_dir"},
+				Name:         "bash-env",
+				Template:     "bash-env-template",
+				EnabledTools: []string{"bash", "read_file", "write_file", "list_dir"},
 			},
 		},
 	}
