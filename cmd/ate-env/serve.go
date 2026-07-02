@@ -73,12 +73,12 @@ func runServe(configPath string) error {
 }
 
 // handleResume handles session resume requests.
-func handleResume(store *session.SessionManager) http.HandlerFunc {
+func handleResume(sm *session.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		envName := r.PathValue("env")
 		sessionID := r.PathValue("session_id")
 
-		if err := store.Resume(r.Context(), sessionID, envName); err != nil {
+		if err := sm.Resume(r.Context(), sessionID, envName); err != nil {
 			log.Printf("failed to resume session %s: %v", sessionID, err)
 			http.Error(w, fmt.Sprintf("failed to resume session: %v", err), http.StatusInternalServerError)
 			return
@@ -90,11 +90,11 @@ func handleResume(store *session.SessionManager) http.HandlerFunc {
 }
 
 // handleSuspend handles session suspend requests.
-func handleSuspend(store *session.SessionManager) http.HandlerFunc {
+func handleSuspend(sm *session.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sessionID := r.PathValue("session_id")
 
-		if err := store.Suspend(r.Context(), sessionID); err != nil {
+		if err := sm.Suspend(r.Context(), sessionID); err != nil {
 			log.Printf("failed to suspend session %s: %v", sessionID, err)
 			http.Error(w, fmt.Sprintf("failed to suspend session: %v", err), http.StatusInternalServerError)
 			return
@@ -106,7 +106,7 @@ func handleSuspend(store *session.SessionManager) http.HandlerFunc {
 }
 
 // handleExecute handles session tool execution requests.
-func handleExecute(store *session.SessionManager) http.HandlerFunc {
+func handleExecute(sm *session.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req session.ExecuteRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -116,7 +116,7 @@ func handleExecute(store *session.SessionManager) http.HandlerFunc {
 
 		envName := r.PathValue("env")
 		sessionID := r.PathValue("session_id")
-		responses, err := store.Execute(r.Context(), sessionID, envName, req.EnvVariables, req.Inputs)
+		responses, err := sm.Execute(r.Context(), sessionID, envName, req.EnvVariables, req.Inputs)
 		if err != nil {
 			log.Printf("failed to execute tool calls for session %s: %v", sessionID, err)
 			http.Error(w, fmt.Sprintf("failed to execute tool calls: %v", err), http.StatusInternalServerError)
