@@ -179,19 +179,6 @@ curl -sX POST localhost:8080/environment/suspend \
 
 ---
 
-## Project layout
-
-| File               | Responsibility                                                        |
-| ------------------ | -------------------------------------------------------------------- |
-| `main.go`          | HTTP server, route wiring, request handlers.                         |
-| `session.go`       | `SessionManager`: actor lifecycle, tool routing, actor communication.|
-| `reqresp.go`       | Request/response types for the HTTP API.                             |
-| `config/config.go` | YAML config loading with defaults.                                   |
-| `config.yaml`      | Example configuration.                                               |
-| `session_test.go`  | Tests for session management and tool execution.                    |
-
----
-
 ## Notes & limitations
 
 - Sessions are held **in memory** — restarting the service loses the cache (actors themselves persist in Agent Substrate). A session must be resumed before `/environment` will accept tool calls.
