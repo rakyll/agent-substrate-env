@@ -53,6 +53,11 @@ ate:
 environments:
   - name: "bash-env"
     template: "bash-env-template"
+    tools:
+      - "bash"
+      - "read_file"
+      - "write_file"
+      - "list_dir"
 ```
 
 | Field           | Default            | Description                                             |
