@@ -60,12 +60,12 @@ func (s *SessionManager) dialAteAPI() (ateapipb.ControlClient, *grpc.ClientConn,
 }
 
 // Resume creates (if not exists) and resumes the underlying sandboxed actor for the session.
-func (s *SessionManager) Resume(ctx context.Context, req ResumeRequest) error {
-	if req.SessionID == "" {
+func (s *SessionManager) Resume(ctx context.Context, sessionID, envName string) error {
+	if sessionID == "" {
 		return fmt.Errorf("session_id cannot be empty")
 	}
-	if req.Name == "" {
-		return fmt.Errorf("name (template name) cannot be empty")
+	if envName == "" {
+		return fmt.Errorf("environment cannot be empty")
 	}
 
 	cli, conn, err := s.dialAteAPI()
@@ -74,19 +74,19 @@ func (s *SessionManager) Resume(ctx context.Context, req ResumeRequest) error {
 	}
 	defer conn.Close()
 
-	templateName := req.Name
+	templateName := envName
 	var tools []string
-	if mapped, exists := s.environments[req.Name]; exists {
+	if mapped, exists := s.environments[envName]; exists {
 		templateName = mapped.TemplateName
 		tools = mapped.Tools
-		log.Printf("Creating actor %s with template %s (mapped from %s) in namespace %s with tools %v...", req.SessionID, templateName, req.Name, s.ateNamespace, tools)
+		log.Printf("Creating actor %s with template %s (mapped from %s) in namespace %s with tools %v...", sessionID, templateName, envName, s.ateNamespace, tools)
 	} else {
-		log.Printf("Creating actor %s with template %s in namespace %s...", req.SessionID, templateName, s.ateNamespace)
+		log.Printf("Creating actor %s with template %s in namespace %s...", sessionID, templateName, s.ateNamespace)
 	}
 
 	// 1. Create Actor (idempotent, ignore AlreadyExists)
 	_, err = cli.CreateActor(ctx, &ateapipb.CreateActorRequest{
-		ActorId:                req.SessionID,
+		ActorId:                sessionID,
 		ActorTemplateNamespace: s.ateNamespace,
 		ActorTemplateName:      templateName,
 	})
@@ -95,15 +95,15 @@ func (s *SessionManager) Resume(ctx context.Context, req ResumeRequest) error {
 	}
 
 	// 2. Resume Actor
-	log.Printf("Resuming actor %s...", req.SessionID)
+	log.Printf("Resuming actor %s...", sessionID)
 	_, err = cli.ResumeActor(ctx, &ateapipb.ResumeActorRequest{
-		ActorId: req.SessionID,
+		ActorId: sessionID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to resume actor: %w", err)
 	}
 
-	log.Printf("Session %s successfully resumed", req.SessionID)
+	log.Printf("Session %s successfully resumed", sessionID)
 	return nil
 }
 
