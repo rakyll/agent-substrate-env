@@ -16,70 +16,35 @@ package session
 
 import (
 	"context"
-	"encoding/json"
-	"io"
-	"net/http"
-	"net/http/httptest"
 	"os"
-	"strings"
+	"path/filepath"
 	"testing"
 
 	"github.com/rakyll/agent-substrate-env/internal/config"
 )
 
 func TestSessionManager_Execute(t *testing.T) {
-	// Spin up a test server to mock atenet HTTP router
-	var receivedReq mockProcessRequest
-	var receivedHost string
-	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedHost = r.Host
-		if r.URL.Path == "/process" {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			_ = json.Unmarshal(body, &receivedReq)
-
-			// Return mock process output
-			resp := mockProcessResponse{
-				Stdout:   "mock stdout output",
-				Stderr:   "mock stderr output",
-				ExitCode: 0,
-			}
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(resp)
-		} else {
-			w.WriteHeader(http.StatusNotFound)
-		}
-	}))
-	defer testServer.Close()
-
-	// Parse host:port from testServer.URL (skip http://)
-	atenetAddr := testServer.URL[len("http://"):]
-
 	store := NewSessionManager("localhost:8080", "default", map[string]EnvDetails{
 		"bash-env": {
 			TemplateName: "bash-env-template",
 			Tools:        []string{"bash", "read_file", "write_file"},
 		},
 	})
-	store.atenetAddr = atenetAddr
 	sessionID := "test-session-123"
 
 	envVars := []EnvVariable{
 		{Name: "SESSION_VAR", Value: "session_val"},
 	}
 
-	// 1. Test "bash" tool call
+	// 1. Test "bash" tool call runs locally and returns stdout.
 	t.Run("bash tool", func(t *testing.T) {
 		inputs := []ToolCall{
-			ToolCall{
+			{
 				ID:   "call-1",
 				Type: "function",
 				Function: FunctionCall{
 					Name:      "bash",
-					Arguments: `{"command": "echo hello"}`,
+					Arguments: `{"command": "echo hello $SESSION_VAR"}`,
 				},
 			},
 		}
@@ -97,69 +62,57 @@ func TestSessionManager_Execute(t *testing.T) {
 			t.Errorf("Expected call_id 'call-1', got %s", resps[0].CallID)
 		}
 
-		// Assert command sent to atenet
-		if len(receivedReq.Command) != 3 || receivedReq.Command[0] != "sh" || receivedReq.Command[2] != "echo hello" {
-			t.Errorf("Unexpected command: %v", receivedReq.Command)
-		}
-
-		// Assert environment variables merged
-		if receivedReq.EnvVars["SESSION_VAR"] != "session_val" {
-			t.Errorf("Expected SESSION_VAR to be 'session_val', got '%s'", receivedReq.EnvVars["SESSION_VAR"])
-		}
-
-		// Assert Host header set correctly
-		expectedHost := "test-session-123.actors.resources.substrate.ate.dev"
-		if receivedHost != expectedHost {
-			t.Errorf("Expected Host header '%s', got '%s'", expectedHost, receivedHost)
+		// The command runs locally with the per-call env var merged in.
+		if resps[0].Content != "hello session_val\n" {
+			t.Errorf("Expected content 'hello session_val\\n', got %q", resps[0].Content)
 		}
 	})
+
+	// File operations run in-process against the local filesystem, so they
+	// operate under a temp directory rather than the mock actor endpoint.
+	fileDir := t.TempDir()
+	filePath := filepath.Join(fileDir, "src", "main.go")
 
 	// 2. Test "write_file" tool call
 	t.Run("write_file tool", func(t *testing.T) {
 		inputs := []ToolCall{
-			ToolCall{
+			{
 				ID:   "call-2",
 				Type: "function",
 				Function: FunctionCall{
 					Name:      "write_file",
-					Arguments: `{"path": "/src/main.go", "content": "package main"}`,
+					Arguments: `{"path": "` + filePath + `", "content": "package main"}`,
 				},
 			},
 		}
 
-		_, err := store.Execute(context.Background(), sessionID, "bash-env", nil, inputs)
+		resps, err := store.Execute(context.Background(), sessionID, "bash-env", nil, inputs)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
-
-		if receivedReq.EnvVars["FILE_PATH"] != "/src/main.go" {
-			t.Errorf("Expected FILE_PATH to be '/src/main.go', got '%s'", receivedReq.EnvVars["FILE_PATH"])
-		}
-		if receivedReq.EnvVars["FILE_CONTENT"] != "package main" {
-			t.Errorf("Expected FILE_CONTENT to be 'package main', got '%s'", receivedReq.EnvVars["FILE_CONTENT"])
+		if len(resps) != 1 {
+			t.Fatalf("Expected 1 response, got %d", len(resps))
 		}
 
-		foundWrite := false
-		for _, arg := range receivedReq.Command {
-			if strings.Contains(arg, "printf '%s' \"$FILE_CONTENT\" > \"$FILE_PATH\"") {
-				foundWrite = true
-				break
-			}
+		// The file (and its parent directory) should now exist on disk.
+		got, err := os.ReadFile(filePath)
+		if err != nil {
+			t.Fatalf("expected file to be written: %v", err)
 		}
-		if !foundWrite {
-			t.Errorf("Expected write command template in: %v", receivedReq.Command)
+		if string(got) != "package main" {
+			t.Errorf("Expected file content 'package main', got '%s'", string(got))
 		}
 	})
 
 	// 3. Test "read_file" tool call
 	t.Run("read_file tool", func(t *testing.T) {
 		inputs := []ToolCall{
-			ToolCall{
+			{
 				ID:   "call-3",
 				Type: "function",
 				Function: FunctionCall{
 					Name:      "read_file",
-					Arguments: `{"path": "/src/main.go"}`,
+					Arguments: `{"path": "` + filePath + `"}`,
 				},
 			},
 		}
@@ -177,26 +130,15 @@ func TestSessionManager_Execute(t *testing.T) {
 			t.Errorf("Expected call_id 'call-3', got %s", resps[0].CallID)
 		}
 
-		if receivedReq.EnvVars["FILE_PATH"] != "/src/main.go" {
-			t.Errorf("Expected FILE_PATH to be '/src/main.go', got '%s'", receivedReq.EnvVars["FILE_PATH"])
-		}
-
-		foundRead := false
-		for _, arg := range receivedReq.Command {
-			if strings.Contains(arg, "cat \"$FILE_PATH\"") {
-				foundRead = true
-				break
-			}
-		}
-		if !foundRead {
-			t.Errorf("Expected read command template in: %v", receivedReq.Command)
+		if resps[0].Content != "package main" {
+			t.Errorf("Expected content 'package main', got '%s'", resps[0].Content)
 		}
 	})
 
 	// 4. Test unsupported tool call returns error response
 	t.Run("unsupported tool call", func(t *testing.T) {
 		inputs := []ToolCall{
-			ToolCall{
+			{
 				ID:   "call-4",
 				Type: "function",
 				Function: FunctionCall{
@@ -224,18 +166,6 @@ func TestSessionManager_Execute(t *testing.T) {
 			t.Errorf("Expected response content '%s', got '%s'", expectedErr, resps[0].Content)
 		}
 	})
-}
-
-type mockProcessRequest struct {
-	Command []string          `json:"command"`
-	EnvVars map[string]string `json:"envvars,omitempty"`
-}
-
-type mockProcessResponse struct {
-	Stdout   string `json:"stdout"`
-	Stderr   string `json:"stderr"`
-	ExitCode int    `json:"exitCode"`
-	Error    string `json:"error,omitempty"`
 }
 
 func TestLoadYAMLConfig(t *testing.T) {

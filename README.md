@@ -132,14 +132,14 @@ Execute one or more tool calls in the session's actor. The session must have bee
 
 ## Supported tools
 
-Each tool call is translated into a shell command executed inside the actor. Arguments are passed via environment variables where possible to avoid shell injection.
+The `bash` tool is translated into a shell command executed inside the actor via its process runner. File operation tools (`read_file`, `write_file`, `list_dir`) run in-process on the local filesystem using the Go standard library — they never shell out.
 
 | Tool          | Arguments                    | Behavior                                            |
 | ------------- | ---------------------------- | --------------------------------------------------- |
-| `bash`        | `command` (or `code`/`cmd`)  | Runs the command with `sh -c`.                      |
-| `read_file`   | `path`                       | `cat` the file.                                     |
-| `write_file`  | `path`, `content`            | Creates parent dirs and writes the content.         |
-| `list_dir`    | `path` (defaults to `.`)     | `ls -la` the directory.                             |
+| `bash`        | `command` (or `code`/`cmd`)  | Runs the command with `sh -c` inside the actor.     |
+| `read_file`   | `path`                       | Reads and returns the file contents (`os.ReadFile`). |
+| `write_file`  | `path`, `content`            | Creates parent dirs (`os.MkdirAll`) and writes the content (`os.WriteFile`). |
+| `list_dir`    | `path` (defaults to `.`)     | Lists the directory (`os.ReadDir`), `ls -la` style. |
 
 ---
 

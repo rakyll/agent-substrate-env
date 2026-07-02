@@ -19,11 +19,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"time"
+	"os"
+	"os/exec"
 
 	"github.com/agent-substrate/substrate/pkg/proto/ateapipb"
 	"google.golang.org/grpc"
@@ -35,7 +35,6 @@ import (
 // SessionManager handles communication with Agent Substrate.
 type SessionManager struct {
 	ateapiAddr   string
-	atenetAddr   string
 	ateNamespace string
 	environments map[string]EnvDetails
 }
@@ -169,7 +168,7 @@ func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName 
 			continue
 		}
 
-		resp := s.executeToolCall(ctx, sessionID, envVars, tc)
+		resp := s.executeToolCall(ctx, envVars, tc)
 		responses = append(responses, resp)
 	}
 
@@ -185,8 +184,8 @@ func isToolAllowed(tool string, allowed []string) bool {
 	return false
 }
 
-// executeToolCall routes a single tool call to the actor's /process endpoint.
-func (s *SessionManager) executeToolCall(ctx context.Context, sessionID string, executionEnv map[string]string, tc ToolCall) ToolResponse {
+// executeToolCall runs a single tool call locally in this binary.
+func (s *SessionManager) executeToolCall(ctx context.Context, executionEnv map[string]string, tc ToolCall) ToolResponse {
 	// OpenResponses uses call_id; OpenAI uses id. Let's support both.
 	callID := tc.CallID
 	if callID == "" {
@@ -206,9 +205,8 @@ func (s *SessionManager) executeToolCall(ctx context.Context, sessionID string, 
 		}
 	}
 
-	var cmd []string
-	var env map[string]string
-
+	// File operations run in-process on the local filesystem via the Go
+	// standard library (see fileops.go); only bash is forwarded to the actor.
 	switch tc.Function.Name {
 	case "write_file":
 		path, _ := args["path"].(string)
@@ -217,12 +215,13 @@ func (s *SessionManager) executeToolCall(ctx context.Context, sessionID string, 
 			toolResp.Content = "Error: 'path' argument is required"
 			return toolResp
 		}
-		// Safe write command using environment variables to avoid shell injection
-		cmd = []string{"sh", "-c", "mkdir -p $(dirname \"$FILE_PATH\") && printf '%s' \"$FILE_CONTENT\" > \"$FILE_PATH\""}
-		env = map[string]string{
-			"FILE_PATH":    path,
-			"FILE_CONTENT": content,
+		out, err := writeFile(path, content)
+		if err != nil {
+			toolResp.Content = fmt.Sprintf("Error: %v", err)
+			return toolResp
 		}
+		toolResp.Content = out
+		return toolResp
 
 	case "read_file":
 		path, _ := args["path"].(string)
@@ -230,20 +229,26 @@ func (s *SessionManager) executeToolCall(ctx context.Context, sessionID string, 
 			toolResp.Content = "Error: 'path' argument is required"
 			return toolResp
 		}
-		cmd = []string{"sh", "-c", "cat \"$FILE_PATH\""}
-		env = map[string]string{
-			"FILE_PATH": path,
+		out, err := readFile(path)
+		if err != nil {
+			toolResp.Content = fmt.Sprintf("Error: %v", err)
+			return toolResp
 		}
+		toolResp.Content = out
+		return toolResp
 
 	case "list_dir":
 		path, _ := args["path"].(string)
 		if path == "" {
 			path = "."
 		}
-		cmd = []string{"sh", "-c", "ls -la \"$DIR_PATH\""}
-		env = map[string]string{
-			"DIR_PATH": path,
+		out, err := listDir(path)
+		if err != nil {
+			toolResp.Content = fmt.Sprintf("Error: %v", err)
+			return toolResp
 		}
+		toolResp.Content = out
+		return toolResp
 
 	case "bash":
 		command, _ := args["command"].(string)
@@ -259,92 +264,47 @@ func (s *SessionManager) executeToolCall(ctx context.Context, sessionID string, 
 			toolResp.Content = "Error: 'command' argument is required"
 			return toolResp
 		}
-		cmd = []string{"sh", "-c", command}
+		// Run the shell command locally in this binary.
+		cmd := []string{"sh", "-c", command}
+		stdout, err := runCommand(ctx, cmd, executionEnv)
+		if err != nil {
+			toolResp.Content = fmt.Sprintf("Error: %v", err)
+			return toolResp
+		}
+		toolResp.Content = stdout
+		return toolResp
 	default:
 		toolResp.Content = fmt.Sprintf("Error: unsupported tool '%s'", tc.Function.Name)
 		return toolResp
 	}
-
-	// Execute command via the HTTP router pointing to the actor
-	stdout, err := s.executeInActor(ctx, sessionID, cmd, executionEnv, env)
-	if err != nil {
-		toolResp.Content = fmt.Sprintf("Error: %v", err)
-		return toolResp
-	}
-
-	toolResp.Content = stdout
-	return toolResp
 }
 
-// executeInActor sends a process execution request to the actor's /process HTTP endpoint.
-func (s *SessionManager) executeInActor(ctx context.Context, sessionID string, cmd []string, executionEnv, customEnv map[string]string) (string, error) {
-	host := s.atenetAddr
-	if host == "" {
-		host = fmt.Sprintf("%s.actors.resources.substrate.ate.dev", sessionID)
+// runCommand executes cmd locally in this binary, layering executionEnv on top
+// of the current process environment, and returns its stdout.
+func runCommand(ctx context.Context, cmd []string, executionEnv map[string]string) (string, error) {
+	if len(cmd) == 0 {
+		return "", fmt.Errorf("empty command")
 	}
-	url := fmt.Sprintf("http://%s/process", host)
 
-	// Merge execution environment variables and custom tool environment variables
-	envVars := make(map[string]string)
+	c := exec.CommandContext(ctx, cmd[0], cmd[1:]...)
+
+	// Start from this process's environment, then merge per-call env vars.
+	c.Env = os.Environ()
 	for k, v := range executionEnv {
-		envVars[k] = v
-	}
-	for k, v := range customEnv {
-		envVars[k] = v
+		c.Env = append(c.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	reqBody := struct {
-		Command []string          `json:"command"`
-		EnvVars map[string]string `json:"envvars,omitempty"`
-	}{
-		Command: cmd,
-		EnvVars: envVars,
-	}
-	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal request body: %w", err)
+	var stdout, stderr bytes.Buffer
+	c.Stdout = &stdout
+	c.Stderr = &stderr
+
+	if err := c.Run(); err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return "", fmt.Errorf("exit code %d: %s (stdout: %s)", exitErr.ExitCode(), stderr.String(), stdout.String())
+		}
+		return "", fmt.Errorf("failed to run command: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return "", fmt.Errorf("failed to create HTTP request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	// Set the Host header so the atenet HTTP router can correctly route to this actor
-	req.Host = fmt.Sprintf("%s.actors.resources.substrate.ate.dev", sessionID)
-
-	// Set a reasonable timeout for execution requests if context does not have one
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to send request to actor: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("actor returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	var processResp struct {
-		Stdout   string `json:"stdout"`
-		Stderr   string `json:"stderr"`
-		ExitCode int    `json:"exitCode"`
-		Error    string `json:"error,omitempty"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&processResp); err != nil {
-		return "", fmt.Errorf("failed to decode process response: %w", err)
-	}
-
-	if processResp.Error != "" {
-		return "", fmt.Errorf("process error: %s (stderr: %s)", processResp.Error, processResp.Stderr)
-	}
-	if processResp.ExitCode != 0 {
-		return "", fmt.Errorf("exit code %d: %s (stdout: %s)", processResp.ExitCode, processResp.Stderr, processResp.Stdout)
-	}
-
-	return processResp.Stdout, nil
+	return stdout.String(), nil
 }
