@@ -48,11 +48,11 @@ type SessionManager struct {
 	ateapiAddr   string
 	atenetAddr   string
 	ateNamespace string
-	environments map[string]string
+	environments map[string]EnvDetails
 }
 
 // NewSessionManager creates a new SessionManager.
-func NewSessionManager(ateapiAddr, ateNamespace string, environments map[string]string) *SessionManager {
+func NewSessionManager(ateapiAddr, ateNamespace string, environments map[string]EnvDetails) *SessionManager {
 	return &SessionManager{
 		sessions:     make(map[string]*Session),
 		ateapiAddr:   ateapiAddr,
@@ -87,9 +87,11 @@ func (s *SessionManager) Resume(ctx context.Context, req ResumeRequest) error {
 	defer conn.Close()
 
 	templateName := req.Name
+	var tools []string
 	if mapped, exists := s.environments[req.Name]; exists {
-		templateName = mapped
-		log.Printf("Creating actor %s with template %s (mapped from %s) in namespace %s...", req.SessionID, templateName, req.Name, s.ateNamespace)
+		templateName = mapped.TemplateName
+		tools = mapped.Tools
+		log.Printf("Creating actor %s with template %s (mapped from %s) in namespace %s with tools %v...", req.SessionID, templateName, req.Name, s.ateNamespace, tools)
 	} else {
 		log.Printf("Creating actor %s with template %s in namespace %s...", req.SessionID, templateName, s.ateNamespace)
 	}
@@ -125,7 +127,7 @@ func (s *SessionManager) Resume(ctx context.Context, req ResumeRequest) error {
 		SessionID:    req.SessionID,
 		TemplateName: req.Name,
 		EnvVars:      envVars,
-		Tools:        req.Tools,
+		Tools:        tools,
 	}
 	s.mu.Unlock()
 

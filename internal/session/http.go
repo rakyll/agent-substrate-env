@@ -25,7 +25,12 @@ type ResumeRequest struct {
 	Name         string        `json:"name"` // Template name, e.g. "bash-env"
 	SessionID    string        `json:"session_id"`
 	EnvVariables []EnvVariable `json:"env_variables"`
-	Tools        []string      `json:"tools"` // enabled tools
+}
+
+// EnvDetails holds predefined environment details.
+type EnvDetails struct {
+	TemplateName string
+	Tools        []string
 }
 
 // SuspendRequest is the payload for POST /environment/suspend.

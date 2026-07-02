@@ -78,15 +78,13 @@ Create (if needed) and resume the actor for a session.
   "session_id": "123e4567-e89b-12d3-a456-426614174000",
   "env_variables": [
     { "name": "MY_SECRET", "value": "c3ebfdfdk12345..." }
-  ],
-  "tools": ["bash", "read_file", "write_file", "list_dir"]
+  ]
 }
 ```
 
 - `name` — actor template name (**required**)
 - `session_id` — unique session identifier (**required**)
 - `env_variables` — env vars merged into every command run in this session
-- `tools` — enabled tools (cached with the session)
 
 **Response:** `{ "status": "ok" }`
 
@@ -157,7 +155,7 @@ Each tool call is translated into a shell command executed inside the actor. Arg
 # 1. Resume the session
 curl -sX POST localhost:8080/environment/resume \
   -H 'Content-Type: application/json' \
-  -d '{"name":"bash-env","session_id":"123e4567-e89b-12d3-a456-426614174000","tools":["bash"]}'
+  -d '{"name":"bash-env","session_id":"123e4567-e89b-12d3-a456-426614174000"}'
 
 # 2. Run a tool call
 curl -sX POST localhost:8080/environment \

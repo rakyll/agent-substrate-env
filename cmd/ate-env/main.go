@@ -35,9 +35,12 @@ func main() {
 	log.Printf("Starting Agent Substrate environment service...")
 	log.Printf("Listening Address: %s", cfg.Listen)
 
-	envs := make(map[string]string)
+	envs := make(map[string]session.EnvDetails)
 	for _, env := range cfg.Environments {
-		envs[env.Name] = env.Template
+		envs[env.Name] = session.EnvDetails{
+			TemplateName: env.Template,
+			Tools:        env.Tools,
+		}
 	}
 	store := session.NewSessionManager(cfg.Ate.Ateapi, cfg.Ate.Namespace, envs)
 
