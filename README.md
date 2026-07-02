@@ -125,7 +125,7 @@ Execute one or more tool calls in the session's actor. The session must have bee
     {
       "name": "bash",
       "call_id": "call_1",
-      "content": "hi\n..."
+      "output": "hi\n..."
     }
   ]
 }

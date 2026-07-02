@@ -59,5 +59,5 @@ type FunctionCall struct {
 type ToolResponse struct {
 	Name    string `json:"name,omitempty"`
 	CallID  string `json:"call_id,omitempty"` // OpenResponses format
-	Content string `json:"content"`           // The result/output of the tool call
+	Output string `json:"output"`             // The result/output of the tool call
 }

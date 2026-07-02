@@ -63,8 +63,8 @@ func TestSessionManager_Execute(t *testing.T) {
 		}
 
 		// The command runs locally with the per-call env var merged in.
-		if resps[0].Content != "hello session_val\n" {
-			t.Errorf("Expected content 'hello session_val\\n', got %q", resps[0].Content)
+		if resps[0].Output != "hello session_val\n" {
+			t.Errorf("Expected content 'hello session_val\\n', got %q", resps[0].Output)
 		}
 	})
 
@@ -130,8 +130,8 @@ func TestSessionManager_Execute(t *testing.T) {
 			t.Errorf("Expected call_id 'call-3', got %s", resps[0].CallID)
 		}
 
-		if resps[0].Content != "package main" {
-			t.Errorf("Expected content 'package main', got '%s'", resps[0].Content)
+		if resps[0].Output != "package main" {
+			t.Errorf("Expected content 'package main', got '%s'", resps[0].Output)
 		}
 	})
 
@@ -162,8 +162,8 @@ func TestSessionManager_Execute(t *testing.T) {
 		}
 
 		expectedErr := "Error: tool 'custom_unsupported_tool' is not enabled in environment 'bash-env'"
-		if resps[0].Content != expectedErr {
-			t.Errorf("Expected response content '%s', got '%s'", expectedErr, resps[0].Content)
+		if resps[0].Output != expectedErr {
+			t.Errorf("Expected response content '%s', got '%s'", expectedErr, resps[0].Output)
 		}
 	})
 }
