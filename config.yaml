@@ -7,8 +7,6 @@ ate:
   # Address of the Agent Substrate ateapi gRPC server
   ateapi: "ateapi.ate-system.svc.cluster.local:443"
 
-  # Address of the Agent Substrate atenet HTTP router
-  atenet: "localhost:8000"
-
   # Agent Substrate namespace to create/resume actors
   namespace: "default"
+

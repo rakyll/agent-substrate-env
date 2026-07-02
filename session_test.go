@@ -58,7 +58,8 @@ func TestSessionManager_Execute(t *testing.T) {
 	// Parse host:port from testServer.URL (skip http://)
 	atenetAddr := testServer.URL[len("http://"):]
 
-	store := NewSessionManager("localhost:8080", atenetAddr, "default")
+	store := NewSessionManager("localhost:8080", "default")
+	store.atenetAddr = atenetAddr
 	sessionID := "test-session-123"
 
 	// Register session manually in the store
@@ -242,7 +243,6 @@ func TestLoadYAMLConfig(t *testing.T) {
 listen: ":9090"
 ate:
   ateapi: "grpc.example.com:443"
-  atenet: "http.example.com"
   namespace: "my-custom-ns"
 `
 	tmpFile, err := os.CreateTemp("", "config-*.yaml")
@@ -266,9 +266,6 @@ ate:
 	}
 	if cfg.Ate.Ateapi != "grpc.example.com:443" {
 		t.Errorf("expected ateapi 'grpc.example.com:443', got '%s'", cfg.Ate.Ateapi)
-	}
-	if cfg.Ate.Atenet != "http.example.com" {
-		t.Errorf("expected atenet 'http.example.com', got '%s'", cfg.Ate.Atenet)
 	}
 	if cfg.Ate.Namespace != "my-custom-ns" {
 		t.Errorf("expected namespace 'my-custom-ns', got '%s'", cfg.Ate.Namespace)

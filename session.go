@@ -51,11 +51,10 @@ type SessionManager struct {
 }
 
 // NewSessionManager creates a new SessionManager.
-func NewSessionManager(ateapiAddr, atenetAddr, ateNamespace string) *SessionManager {
+func NewSessionManager(ateapiAddr, ateNamespace string) *SessionManager {
 	return &SessionManager{
 		sessions:     make(map[string]*Session),
 		ateapiAddr:   ateapiAddr,
-		atenetAddr:   atenetAddr,
 		ateNamespace: ateNamespace,
 	}
 }
@@ -269,9 +268,13 @@ func (s *SessionManager) executeToolCall(ctx context.Context, sessionID string, 
 	return toolResp
 }
 
-// executeInActor sends a process execution request to the actor's /process HTTP endpoint via the atenet router.
+// executeInActor sends a process execution request to the actor's /process HTTP endpoint.
 func (s *SessionManager) executeInActor(ctx context.Context, sessionID string, cmd []string, customEnv map[string]string) (string, error) {
-	url := fmt.Sprintf("http://%s/process", s.atenetAddr)
+	host := s.atenetAddr
+	if host == "" {
+		host = fmt.Sprintf("%s.actors.resources.substrate.ate.dev", sessionID)
+	}
+	url := fmt.Sprintf("http://%s/process", host)
 
 	// Merge session environment variables and custom tool environment variables
 	envVars := make(map[string]string)
