@@ -1,4 +1,4 @@
-# agent-substrate-env
+# Agent Substrate Environment
 
 A lightweight **environment service** for [Agent Substrate](https://github.com/agent-substrate/substrate). It exposes a small API that lets an agent runtime
 run tools — file operations and shell commands — inside session-tenant sandboxed actors.
