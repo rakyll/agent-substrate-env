@@ -27,7 +27,7 @@ type EnvDetails struct {
 }
 
 // ExecuteRequest is the payload for
-// POST /v1/environments/{env}/sessions/{session_id}/execute.
+// POST /v1/environments/{env}/sessions/{session_id}.
 //
 // The environment and session are taken from the URL path, so the body only
 // carries the per-call execution data.

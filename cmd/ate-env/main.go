@@ -45,9 +45,17 @@ func main() {
 	store := session.NewSessionManager(cfg.Ate.Ateapi, cfg.Ate.Namespace, envs)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /environment/resume", handleResume(store))
-	mux.HandleFunc("POST /environment/suspend", handleSuspend(store))
-	mux.HandleFunc("POST /environment/{env_name}", handleExecute(store))
+	// Sessions are sub-resources of an environment. Both the environment and
+	// the session id live in the path on every call, which the stateless
+	// service needs anyway to pick the template + tool allowlist.
+	//
+	// Executing tool calls is the primary operation on a session, so it is a
+	// POST to the session resource itself. Lifecycle transitions hang off it as
+	// trailing action segments (rather than the AIP-style {id}:resume custom
+	// method, since net/http requires a path wildcard to span a full segment).
+	mux.HandleFunc("POST /v1/environments/{env}/sessions/{session_id}", handleExecute(store))
+	mux.HandleFunc("POST /v1/environments/{env}/sessions/{session_id}/resume", handleResume(store))
+	mux.HandleFunc("POST /v1/environments/{env}/sessions/{session_id}/suspend", handleSuspend(store))
 	mux.HandleFunc("GET /healthz", handleHealthz)
 
 	// Ensure port has a colon if it's just a raw port number
@@ -62,17 +70,14 @@ func main() {
 	}
 }
 
-// handleResume handles environment resume requests.
+// handleResume handles session resume requests.
 func handleResume(store *session.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req session.ResumeRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, fmt.Sprintf("invalid request payload: %v", err), http.StatusBadRequest)
-			return
-		}
+		envName := r.PathValue("env")
+		sessionID := r.PathValue("session_id")
 
-		if err := store.Resume(r.Context(), req); err != nil {
-			log.Printf("failed to resume session %s: %v", req.SessionID, err)
+		if err := store.Resume(r.Context(), sessionID, envName); err != nil {
+			log.Printf("failed to resume session %s: %v", sessionID, err)
 			http.Error(w, fmt.Sprintf("failed to resume session: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -82,17 +87,13 @@ func handleResume(store *session.SessionManager) http.HandlerFunc {
 	}
 }
 
-// handleSuspend handles environment suspend requests.
+// handleSuspend handles session suspend requests.
 func handleSuspend(store *session.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req session.SuspendRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, fmt.Sprintf("invalid request payload: %v", err), http.StatusBadRequest)
-			return
-		}
+		sessionID := r.PathValue("session_id")
 
-		if err := store.Suspend(r.Context(), req.SessionID); err != nil {
-			log.Printf("failed to suspend session %s: %v", req.SessionID, err)
+		if err := store.Suspend(r.Context(), sessionID); err != nil {
+			log.Printf("failed to suspend session %s: %v", sessionID, err)
 			http.Error(w, fmt.Sprintf("failed to suspend session: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -102,7 +103,7 @@ func handleSuspend(store *session.SessionManager) http.HandlerFunc {
 	}
 }
 
-// handleExecute handles environment tool execution requests.
+// handleExecute handles session tool execution requests.
 func handleExecute(store *session.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req session.ExecuteRequest
@@ -111,10 +112,11 @@ func handleExecute(store *session.SessionManager) http.HandlerFunc {
 			return
 		}
 
-		envName := r.PathValue("env_name")
-		responses, err := store.Execute(r.Context(), req.SessionID, envName, req.EnvVariables, req.Inputs)
+		envName := r.PathValue("env")
+		sessionID := r.PathValue("session_id")
+		responses, err := store.Execute(r.Context(), sessionID, envName, req.EnvVariables, req.Inputs)
 		if err != nil {
-			log.Printf("failed to execute tool calls for session %s: %v", req.SessionID, err)
+			log.Printf("failed to execute tool calls for session %s: %v", sessionID, err)
 			http.Error(w, fmt.Sprintf("failed to execute tool calls: %v", err), http.StatusInternalServerError)
 			return
 		}

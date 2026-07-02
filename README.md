@@ -24,9 +24,12 @@ flowchart LR
     env -->|tool call operations| actor
 ```
 
-1. **`/environment/resume`** — creates an actor (idempotent) via Agent Substrate, resumes it, and caches the session's env vars + enabled tools in memory.
-1. **`/environment/suspend`** — suspends the actor and drops the session from the in-memory cache.
-1. **`/environment`** — sends tool calls to the actor and executes them to return tool responses.
+1. **`resume`** — creates an actor (idempotent) via Agent Substrate and resumes it.
+1. **`suspend`** — suspends the actor.
+1. **`execute`** — sends tool calls to the actor and executes them to return tool responses.
+
+The service is stateless: every request identifies both the environment and the
+session in the URL path, so no per-session state is kept in memory.
 
 ---
 
