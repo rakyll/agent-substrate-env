@@ -1,8 +1,9 @@
 # agent-substrate-env
 
-A lightweight HTTP **environment service** (sidecar) for [Agent Substrate](https://github.com/agent-substrate/substrate). It exposes a small REST API that lets an agent runtime run tools — file operations and shell commands — inside per-session sandboxed actors.
+A lightweight HTTP **environment service** for [Agent Substrate](https://github.com/agent-substrate/substrate). It exposes a small REST API that lets an agent runtime run tools — file operations and shell commands — inside per-session sandboxed actors.
 
-Each agent session maps to a sandboxed **actor** in Agent Substrate. This service manages that actor's lifecycle (create → resume → suspend) and translates incoming tool calls (in OpenAI / OpenResponses format) into commands executed inside the actor.
+Each agent session maps to a sandboxed **actor** in Agent Substrate. This service manages that actor's lifecycle (create → resume → suspend) and translates incoming tool calls
+into operations executed inside the actor.
 
 ---
 
@@ -10,18 +11,17 @@ Each agent session maps to a sandboxed **actor** in Agent Substrate. This servic
 
 ```
                  ┌──────────────────────────────┐
- Agent runtime   │      agent-substrate-env      │        Agent Substrate
- ─────────────►  │        (this service)         │
-   HTTP/JSON     │                               │
-                 │  SessionManager               │  gRPC (ateapi)   ┌───────────┐
-   /resume  ───► │   ├─ CreateActor / Resume ────┼────────────────► │  Control  │
-   /suspend ───► │   ├─ SuspendActor       ──────┼────────────────► │   plane   │
-   /environment► │   └─ Execute tool calls ──────┼──────┐           └───────────┘
-                 └───────────────────────────────┘      │ HTTP (atenet)
-                                                         ▼
+ Agent runtime   │      agent-substrate-env     │      Agent Substrate
+ ─────────────►  │                              │
+                 │  SessionManager              │                  ┌───────────┐
+   /resume  ───► │   ├─ Resume               ───┼────────────────► │  Control  │
+   /suspend ───► │   ├─ Suspend            ─────┼────────────────► │   plane   │
+   /environment► │   └─ Execute tool calls ─────┼───────┐          └───────────┘
+                 └──────────────────────────────┘       │
+                                                        ▼
                                                    ┌───────────┐
-                                                   │   Actor    │  POST /process
-                                                   │ (sandbox)  │  → runs sh command
+                                                   │   Actor   │  POST /process
+                                                   │ (sandbox) │  → runs operations
                                                    └───────────┘
 ```
 
