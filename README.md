@@ -75,7 +75,7 @@ ate-env serve --config config.yaml
 
 All endpoints accept and return JSON. The environment (`{env}`) and session (`{session_id}`) are always part of the URL path. `GET /healthz` is served by both subcommands.
 
-### `POST /v1/environments/{env}/sessions/{session_id}/resume` — `serve`
+### `POST /v1/environments/{env}/sessions/{session_id}/resume`
 
 Create (if needed) and resume the actor for the session in `{env}`. No request body.
 
@@ -85,14 +85,14 @@ Create (if needed) and resume the actor for the session in `{env}`. No request b
 **Response:** `{ "status": "ok" }`
 
 
-### `POST /v1/environments/{env}/sessions/{session_id}/suspend` — `serve`
+### `POST /v1/environments/{env}/sessions/{session_id}/suspend`
 
 Suspend the session's actor. No request body.
 
 **Response:** `{ "status": "ok" }`
 
 
-### `POST /v1/environments/{env}/sessions/{session_id}` — `actor`
+### `POST /v1/environments/{env}/sessions/{session_id}`
 
 Execute one or more tool calls in the session's actor. The session must have been resumed first. Only tools configured/enabled for `{env}` can be executed.
 
