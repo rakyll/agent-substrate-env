@@ -1,10 +1,10 @@
 # Agent Substrate Environment
 
-A lightweight agentic **environment service** for [Agent Substrate](https://github.com/agent-substrate/substrate). It exposes a small API that lets an agent runtime
+A lightweight **agentic environment service** for [Agent Substrate](https://github.com/agent-substrate/substrate). It exposes an API that lets an agent runtime
 run tools — file operations and shell commands — inside session-tenant sandboxed actors.
 
-Each session maps to a sandboxed **actor** in Agent Substrate. The service runs
-as `ate-env serve`: it manages the actor's lifecycle (create → resume → suspend)
+Each session maps to a sandboxed actor in Agent Substrate.
+The service manages the actor's lifecycle (create → resume → suspend)
 via the Agent Substrate control API, and executes incoming tool calls in-process
 against the local environment. It returns tool call responses.
 
