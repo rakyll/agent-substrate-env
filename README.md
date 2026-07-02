@@ -3,11 +3,16 @@
 A lightweight **environment service** for [Agent Substrate](https://github.com/agent-substrate/substrate). It exposes a small API that lets an agent runtime
 run tools — file operations and shell commands — inside session-tenant sandboxed actors.
 
-Each session maps to a sandboxed **actor** in Agent Substrate.
-This service runs inside the actor: it manages the actor's lifecycle (create →
-resume → suspend) via the Agent Substrate control API, and executes incoming
-tool calls in-process against the local environment. It returns tool call
-responses.
+Each session maps to a sandboxed **actor** in Agent Substrate. The service ships
+as a single `ate-env` binary with two subcommands:
+
+- **`ate-env serve`** — the control plane. Manages actor lifecycle (create →
+  resume → suspend) via the Agent Substrate control API.
+- **`ate-env actor`** — the in-actor tool executor. Runs inside the sandboxed
+  actor and executes incoming tool calls in-process against the local
+  environment, returning tool call responses.
+
+Both subcommands read the same `config.yaml`.
 
 ---
 
@@ -69,11 +74,27 @@ environments:
 
 ---
 
+## Usage
+
+```bash
+# Control plane: actor lifecycle (resume, suspend).
+ate-env serve --config config.yaml
+
+# In-actor tool executor: runs tool calls.
+ate-env actor --config config.yaml
+```
+
+`--config` defaults to `config.yaml` in the working directory. Both subcommands
+bind to the `listen` address from their config; run them with separate configs
+(or hosts/ports) when co-located.
+
+---
+
 ## API
 
-All endpoints accept and return JSON. The environment (`{env}`) and session (`{session_id}`) are always part of the URL path.
+All endpoints accept and return JSON. The environment (`{env}`) and session (`{session_id}`) are always part of the URL path. `GET /healthz` is served by both subcommands.
 
-### `POST /v1/environments/{env}/sessions/{session_id}/resume`
+### `POST /v1/environments/{env}/sessions/{session_id}/resume` — `serve`
 
 Create (if needed) and resume the actor for the session in `{env}`. No request body.
 
@@ -83,14 +104,14 @@ Create (if needed) and resume the actor for the session in `{env}`. No request b
 **Response:** `{ "status": "ok" }`
 
 
-### `POST /v1/environments/{env}/sessions/{session_id}/suspend`
+### `POST /v1/environments/{env}/sessions/{session_id}/suspend` — `serve`
 
 Suspend the session's actor. No request body.
 
 **Response:** `{ "status": "ok" }`
 
 
-### `POST /v1/environments/{env}/sessions/{session_id}`
+### `POST /v1/environments/{env}/sessions/{session_id}` — `actor`
 
 Execute one or more tool calls in the session's actor. The session must have been resumed first. Only tools configured/enabled for `{env}` can be executed.
 
