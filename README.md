@@ -165,11 +165,6 @@ curl -sX POST localhost:8080/v1/environments/bash-env/sessions/$SID/suspend
 
 ---
 
-## Notes & limitations
-
-- The service is completely **stateless** — restarting the service is safe and does not lose any session state (actors persist in Agent Substrate).
-- A non-zero exit code from a command is surfaced as an error in the tool response `content`.
-
 ## License
 
 Apache 2.0 — see the license headers in source files.
