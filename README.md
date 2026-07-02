@@ -110,8 +110,6 @@ Execute one or more tool calls in the session's actor. The session must have bee
 }
 ```
 
-`function.arguments` is a **JSON-encoded string** (OpenAI/OpenResponses convention). Both `call_id` (OpenResponses) and `id` (OpenAI) are accepted.
-
 **Response:**
 
 ```json
