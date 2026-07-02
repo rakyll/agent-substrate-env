@@ -148,7 +148,7 @@ Each tool call is translated into a shell command executed inside the actor. Arg
 ## Example: end-to-end with curl
 
 ```bash
-SID="123e4567-e89b-12d3-a456-426614174000"
+SESSION_ID="123e4567-e89b-12d3-a456-426614174000"
 
 # 1. Resume the session
 curl -sX POST localhost:8080/environment/resume \
@@ -156,7 +156,7 @@ curl -sX POST localhost:8080/environment/resume \
   -d @- <<EOF
 {
   "name": "bash-env",
-  "session_id": "$SID",
+  "session_id": "$SESSION_ID",
   "tools": ["bash"]
 }
 EOF
@@ -166,7 +166,7 @@ curl -sX POST localhost:8080/environment \
   -H 'Content-Type: application/json' \
   -d @- <<EOF
 {
-  "session_id": "$SID",
+  "session_id": "$SESSION_ID",
   "inputs": [
     {
       "call_id": "c1",
@@ -185,7 +185,7 @@ curl -sX POST localhost:8080/environment/suspend \
   -H 'Content-Type: application/json' \
   -d @- <<EOF
 {
-  "session_id": "$SID"
+  "session_id": "$SESSION_ID"
 }
 EOF
 ```
