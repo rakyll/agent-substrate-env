@@ -153,17 +153,41 @@ SID="123e4567-e89b-12d3-a456-426614174000"
 # 1. Resume the session
 curl -sX POST localhost:8080/environment/resume \
   -H 'Content-Type: application/json' \
-  -d "{\"name\":\"bash-env\",\"session_id\":\"$SID\",\"tools\":[\"bash\"]}"
+  -d @- <<EOF
+{
+  "name": "bash-env",
+  "session_id": "$SID",
+  "tools": ["bash"]
+}
+EOF
 
 # 2. Run a tool call
 curl -sX POST localhost:8080/environment \
   -H 'Content-Type: application/json' \
-  -d "{\"session_id\":\"$SID\",\"inputs\":[{\"call_id\":\"c1\",\"type\":\"function\",\"function\":{\"name\":\"bash\",\"arguments\":\"{\\\"command\\\":\\\"uname -a\\\"}\"}}]}"
+  -d @- <<EOF
+{
+  "session_id": "$SID",
+  "inputs": [
+    {
+      "call_id": "c1",
+      "type": "function",
+      "function": {
+        "name": "bash",
+        "arguments": "{\"command\":\"uname -a\"}"
+      }
+    }
+  ]
+}
+EOF
 
 # 3. Suspend when done
 curl -sX POST localhost:8080/environment/suspend \
   -H 'Content-Type: application/json' \
-  -d "{\"session_id\":\"$SID\"}"
+  -d @- <<EOF
+{
+  "session_id": "$SID"
+}
+EOF
 ```
 
 ---
