@@ -143,8 +143,6 @@ Each tool call is translated into a shell command executed inside the actor. Arg
 | `write_file`  | `path`, `content`            | Creates parent dirs and writes the content.         |
 | `list_dir`    | `path` (defaults to `.`)     | `ls -la` the directory.                             |
 
-Unknown tools return `Error: unsupported tool '<name>'`.
-
 ---
 
 ## Example: end-to-end with curl
