@@ -185,7 +185,7 @@ func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []Env
 		callID = tc.ID
 	}
 
-	toolResp := ToolResponse{
+	resp := ToolResponse{
 		Name:   tc.Function.Name,
 		CallID: callID,
 	}
@@ -193,8 +193,8 @@ func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []Env
 	var args map[string]any
 	if tc.Function.Arguments != "" {
 		if err := json.Unmarshal([]byte(tc.Function.Arguments), &args); err != nil {
-			toolResp.Content = fmt.Sprintf("Error parsing tool arguments: %v", err)
-			return toolResp
+			resp.Content = fmt.Sprintf("Error parsing tool arguments: %v", err)
+			return resp
 		}
 	}
 
@@ -205,30 +205,30 @@ func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []Env
 		path, _ := args["path"].(string)
 		content, _ := args["content"].(string)
 		if path == "" {
-			toolResp.Content = "Error: 'path' argument is required"
-			return toolResp
+			resp.Content = "Error: 'path' argument is required"
+			return resp
 		}
 		out, err := writeFile(path, content)
 		if err != nil {
-			toolResp.Content = fmt.Sprintf("Error: %v", err)
-			return toolResp
+			resp.Content = fmt.Sprintf("Error: %v", err)
+			return resp
 		}
-		toolResp.Content = out
-		return toolResp
+		resp.Content = out
+		return resp
 
 	case "read_file":
 		path, _ := args["path"].(string)
 		if path == "" {
-			toolResp.Content = "Error: 'path' argument is required"
-			return toolResp
+			resp.Content = "Error: 'path' argument is required"
+			return resp
 		}
 		out, err := readFile(path)
 		if err != nil {
-			toolResp.Content = fmt.Sprintf("Error: %v", err)
-			return toolResp
+			resp.Content = fmt.Sprintf("Error: %v", err)
+			return resp
 		}
-		toolResp.Content = out
-		return toolResp
+		resp.Content = out
+		return resp
 
 	case "list_dir":
 		path, _ := args["path"].(string)
@@ -237,11 +237,11 @@ func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []Env
 		}
 		out, err := listDir(path)
 		if err != nil {
-			toolResp.Content = fmt.Sprintf("Error: %v", err)
-			return toolResp
+			resp.Content = fmt.Sprintf("Error: %v", err)
+			return resp
 		}
-		toolResp.Content = out
-		return toolResp
+		resp.Content = out
+		return resp
 
 	case "bash":
 		command, _ := args["command"].(string)
@@ -254,21 +254,21 @@ func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []Env
 			}
 		}
 		if command == "" {
-			toolResp.Content = "Error: 'command' argument is required"
-			return toolResp
+			resp.Content = "Error: 'command' argument is required"
+			return resp
 		}
 		// Run the shell command locally in this binary.
 		cmd := []string{"sh", "-c", command}
 		stdout, err := runCommand(ctx, cmd)
 		if err != nil {
-			toolResp.Content = fmt.Sprintf("Error: %v", err)
-			return toolResp
+			resp.Content = fmt.Sprintf("Error: %v", err)
+			return resp
 		}
-		toolResp.Content = stdout
-		return toolResp
+		resp.Content = stdout
+		return resp
 	default:
-		toolResp.Content = fmt.Sprintf("Error: unsupported tool '%s'", tc.Function.Name)
-		return toolResp
+		resp.Content = fmt.Sprintf("Error: unsupported tool '%s'", tc.Function.Name)
+		return resp
 	}
 }
 
