@@ -71,8 +71,6 @@ ate-env serve --config config.yaml
 
 ## API
 
-All endpoints accept and return JSON. The environment (`{env}`) and session (`{session_id}`) are always part of the URL path. `GET /healthz` is served by both subcommands.
-
 ### `POST /v1/environments/{env}/sessions/{session_id}/resume`
 
 Create (if needed) and resume the actor for the session in `{env}`.
