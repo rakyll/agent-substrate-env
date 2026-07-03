@@ -75,11 +75,7 @@ ate-env serve --config config.yaml
 
 Create (if needed) and resume the actor for the session in `{env}`.
 
-- `{env}` — client-facing environment name, e.g. `bash-env` (**required**)
-- `{session_id}` — unique session identifier (**required**)
-
 **Response:** `{ "status": "ok" }`
-
 
 ### `POST /v1/environments/{env}/sessions/{session_id}/suspend`
 
