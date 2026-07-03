@@ -12,6 +12,7 @@ against the local environment. It returns tool call responses.
 
 ## Overview
 
+<div style="padding: 30px 0;">
 ```mermaid
 flowchart LR
     runtime["Agent Runtime"]
@@ -26,10 +27,7 @@ flowchart LR
     actor --> bash
     actor --> web_fetcher
 ```
-
-1. **`resume`** — creates and resume existing actors.
-1. **`suspend`** — suspends the actor.
-1. **`execute`** — runs tool calls the the actor and returns tool call responses.
+</div>
 
 ---
 
