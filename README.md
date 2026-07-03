@@ -22,6 +22,9 @@ flowchart LR
     runtime -->|resume, suspend, execute| env
     env -->|actor lifecycle operations| substrate
     env -->|tool call operations| actor
+    actor --> filesystem
+    actor --> bash
+    actor --> web_fetcher
 ```
 
 1. **`resume`** — creates and resume existing actors.
