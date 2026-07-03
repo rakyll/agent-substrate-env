@@ -57,7 +57,8 @@ type FunctionCall struct {
 
 // ToolResponse represents a tool execution response in OpenResponses/OpenAI format.
 type ToolResponse struct {
-	Name    string `json:"name,omitempty"`
-	CallID  string `json:"call_id,omitempty"` // OpenResponses format
-	Output string `json:"output"`             // The result/output of the tool call
+	Type   string `json:"type"`
+	Name   string `json:"name,omitempty"`
+	CallID string `json:"call_id,omitempty"`
+	Output string `json:"output"`
 }

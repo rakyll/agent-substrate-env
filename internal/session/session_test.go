@@ -58,6 +58,10 @@ func TestSessionManager_Execute(t *testing.T) {
 			t.Fatalf("Expected 1 response, got %d", len(resps))
 		}
 
+		if resps[0].Type != "function_call_output" {
+			t.Errorf("Expected type 'function_call_output', got %s", resps[0].Type)
+		}
+
 		if resps[0].CallID != "call-1" {
 			t.Errorf("Expected call_id 'call-1', got %s", resps[0].CallID)
 		}
@@ -155,6 +159,10 @@ func TestSessionManager_Execute(t *testing.T) {
 
 		if len(resps) != 1 {
 			t.Fatalf("Expected 1 response, got %d", len(resps))
+		}
+
+		if resps[0].Type != "function_call_output" {
+			t.Errorf("Expected type 'function_call_output', got %s", resps[0].Type)
 		}
 
 		if resps[0].CallID != "call-4" {

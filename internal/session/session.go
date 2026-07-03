@@ -155,6 +155,7 @@ func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName 
 				callID = tc.ID
 			}
 			responses = append(responses, ToolResponse{
+				Type:   "function_call_output",
 				Name:   tc.Function.Name,
 				CallID: callID,
 				Output: fmt.Sprintf("Error: tool '%s' is not enabled in environment '%s'", tc.Function.Name, envName),
@@ -193,6 +194,7 @@ func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []Env
 	}
 
 	resp := ToolResponse{
+		Type:   "function_call_output",
 		Name:   tc.Function.Name,
 		CallID: callID,
 	}
