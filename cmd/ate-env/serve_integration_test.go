@@ -117,12 +117,12 @@ environments:
 		t.Fatalf("failed to write config: %v", err)
 	}
 
-	_, store, err := newSessionManager(configPath)
+	_, sm, err := newSessionManager(configPath)
 	if err != nil {
 		t.Fatalf("failed to build session manager: %v", err)
 	}
 
-	srv := httptest.NewServer(newMux(store))
+	srv := httptest.NewServer(newMux(sm))
 	t.Cleanup(srv.Close)
 	return srv
 }

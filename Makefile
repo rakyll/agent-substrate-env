@@ -32,7 +32,7 @@ test:
 # End-to-end tests against a real Agent Substrate deployment. Requires the
 # control API to be reachable at ATE_TEST_ATEAPI — run "make port-forward-ateapi"
 # in another terminal first (or point ATE_TEST_ATEAPI at an in-cluster address).
-test-integration:
+integration:
 	ATE_TEST_ATEAPI=$(ATE_TEST_ATEAPI) \
 	ATE_TEST_ATESPACE=$(ATE_TEST_ATESPACE) \
 	ATE_TEST_TEMPLATE=$(ATE_TEST_TEMPLATE) \
