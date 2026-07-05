@@ -74,12 +74,12 @@ ate-env serve --config config.yaml
 
 ### Deploying to a cluster
 
-`./manifests/install.sh` builds the image with [ko](https://ko.build) (no Dockerfile needed) and deploys the service to the `ate-env` namespace of your current kubectl context. The cluster must already have [Agent Substrate](https://github.com/agent-substrate/substrate) installed and reachable at the `ate.ateapi` endpoint configured in `config.yaml`.
+`./manifests/install.sh` builds the image with [podman](https://podman.io) using the multi-stage `Dockerfile` at the repo root, pushes it, and deploys the service to the `ate-env` namespace of your current kubectl context. The cluster must already have [Agent Substrate](https://github.com/agent-substrate/substrate) installed and reachable at the `ate.ateapi` endpoint configured in `config.yaml`.
 
 ```bash
-# Build, push, and deploy. Set PROJECT_ID to push to gcr.io/$PROJECT_ID,
-# or set KO_DOCKER_REPO directly for any other registry.
-PROJECT_ID=my-project ./manifests/install.sh --deploy-ate-env
+# Build, push, and deploy. Set GOOGLE_PROJECT_ID to push to gcr.io/$GOOGLE_PROJECT_ID,
+# or set ATE_ENV_IMAGE_REPO directly for any other registry.
+GOOGLE_PROJECT_ID=my-project ./manifests/install.sh --deploy-ate-env
 
 # Reach the service locally (optional)
 kubectl port-forward -n ate-env svc/ate-env 7777:7777
@@ -92,9 +92,9 @@ Environment variables the script honors:
 
 | Variable | Description |
 | -------- | ----------- |
-| `PROJECT_ID` | Sets `KO_DOCKER_REPO=gcr.io/$PROJECT_ID`. |
-| `KO_DOCKER_REPO` | Registry to push the image to (required unless `PROJECT_ID` or `ATE_ENV_IMAGE` is set). |
-| `ATE_ENV_IMAGE` | Use a prebuilt digest-pinned image instead of building with ko. |
+| `GOOGLE_PROJECT_ID` | Sets `ATE_ENV_IMAGE_REPO=gcr.io/$GOOGLE_PROJECT_ID`. |
+| `ATE_ENV_IMAGE_REPO` | Registry to push the image to (required unless `GOOGLE_PROJECT_ID` or `ATE_ENV_IMAGE` is set). |
+| `ATE_ENV_IMAGE` | Use a prebuilt digest-pinned image instead of building one. |
 | `KUBECTL_CONTEXT` | kubectl context to deploy to (defaults to the current context). |
 | `ATE_ENV_WAIT_TIMEOUT` | Rollout wait timeout (default `5m`). |
 

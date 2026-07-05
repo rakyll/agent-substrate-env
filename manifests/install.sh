@@ -20,12 +20,10 @@ set -o pipefail
 ROOT=$(git rev-parse --show-toplevel)
 cd "${ROOT}"
 
-if [[ -n "${PROJECT_ID:-}" ]]; then
-  export KO_DOCKER_REPO="gcr.io/${PROJECT_ID}"
-  echo "Using KO_DOCKER_REPO: ${KO_DOCKER_REPO}" >&2
+if [[ -n "${GOOGLE_PROJECT_ID:-}" ]]; then
+  export ATE_ENV_IMAGE_REPO="gcr.io/${GOOGLE_PROJECT_ID}"
+  echo "Using ATE_ENV_IMAGE_REPO: ${ATE_ENV_IMAGE_REPO}" >&2
 fi
-
-export KO_DEFAULTPLATFORMS="${KO_DEFAULTPLATFORMS:-linux/amd64}"
 
 # ANSI color codes for prettier output
 COLOR_CYAN='\033[1;36m'
@@ -82,32 +80,39 @@ run_kubectl() {
     "$@"
 }
 
-# build_ate_env_image builds and pushes the ate-env image with ko (the service is
-# a pure Go binary, so no Dockerfile is required) and echoes its digest-pinned
-# reference on stdout. Requires KO_DOCKER_REPO.
+# build_ate_env_image builds and pushes the ate-env image with podman using
+# the multi-stage Dockerfile at the repo root, and echoes its digest-pinned
+# reference on stdout. Requires ATE_ENV_IMAGE_REPO.
 build_ate_env_image() {
   if [[ -n "${ATE_ENV_IMAGE:-}" ]]; then
     echo "${ATE_ENV_IMAGE}"
     return
   fi
-  if [[ -z "${KO_DOCKER_REPO:-}" ]]; then
-    echo "Error: KO_DOCKER_REPO environment variable must be set (or set PROJECT_ID)" >&2
+  if [[ -z "${ATE_ENV_IMAGE_REPO:-}" ]]; then
+    echo "Error: ATE_ENV_IMAGE_REPO environment variable must be set (or set GOOGLE_PROJECT_ID)" >&2
     exit 1
   fi
-  if ! command -v ko >/dev/null 2>&1; then
-    echo "Error: 'ko' not found in PATH. Install it from https://ko.build." >&2
+  if ! command -v podman >/dev/null 2>&1; then
+    echo "Error: 'podman' not found in PATH. Install it from https://podman.io." >&2
     exit 1
   fi
 
-  local image_ref
+  local image="${ATE_ENV_IMAGE_REPO}/ate-env:latest"
+
   log_step "build_ate_env_image" >&2
-  image_ref="$(ko build --platform=linux/amd64 -B ./cmd/ate-env)"
+  podman build --platform=linux/amd64 -t "${image}" "${ROOT}" >&2
 
-  if [[ "${image_ref}" != *@sha256:* ]]; then
-    echo "Error: ko did not return a digest-pinned image (got '${image_ref}')." >&2
+  local digest_file digest
+  digest_file="$(mktemp)"
+  podman push --digestfile "${digest_file}" "${image}" >&2
+  digest="$(cat "${digest_file}")"
+  rm -f "${digest_file}"
+
+  if [[ "${digest}" != sha256:* ]]; then
+    echo "Error: podman did not report an image digest (got '${digest}')." >&2
     exit 1
   fi
-  echo "${image_ref}"
+  echo "${ATE_ENV_IMAGE_REPO}/ate-env@${digest}"
 }
 
 deploy_ate_env() {
