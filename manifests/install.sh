@@ -80,7 +80,7 @@ run_kubectl() {
     "$@"
 }
 
-# build_ate_env_image builds and pushes the ate-env image with podman using
+# build_ate_env_image builds and pushes the ate-env image with podman or docker using
 # the multi-stage Dockerfile at the repo root, and echoes its digest-pinned
 # reference on stdout. Requires ATE_ENV_IMAGE_REPO.
 build_ate_env_image() {
@@ -92,24 +92,38 @@ build_ate_env_image() {
     echo "Error: ATE_ENV_IMAGE_REPO environment variable must be set (or set GOOGLE_PROJECT_ID)" >&2
     exit 1
   fi
+  local tool="podman"
   if ! command -v podman >/dev/null 2>&1; then
-    echo "Error: 'podman' not found in PATH. Install it from https://podman.io." >&2
-    exit 1
+    if command -v docker >/dev/null 2>&1; then
+      tool="docker"
+    else
+      echo "Error: neither 'podman' nor 'docker' was found in PATH." >&2
+      exit 1
+    fi
   fi
 
   local image="${ATE_ENV_IMAGE_REPO}/ate-env:latest"
 
-  log_step "build_ate_env_image" >&2
-  podman build --platform=linux/amd64 -t "${image}" "${ROOT}" >&2
+  log_step "build_ate_env_image (${tool})" >&2
 
-  local digest_file digest
-  digest_file="$(mktemp)"
-  podman push --digestfile "${digest_file}" "${image}" >&2
-  digest="$(cat "${digest_file}")"
-  rm -f "${digest_file}"
+  local digest
+  if [[ "${tool}" == "podman" ]]; then
+    podman build --platform=linux/amd64 -t "${image}" "${ROOT}" >&2
+    local digest_file
+    digest_file="$(mktemp)"
+    podman push --digestfile "${digest_file}" "${image}" >&2
+    digest="$(cat "${digest_file}")"
+    rm -f "${digest_file}"
+  else
+    docker build --platform=linux/amd64 -t "${image}" "${ROOT}" >&2
+    docker push "${image}" >&2
+    local repo_digest
+    repo_digest="$(docker inspect --format='{{if .RepoDigests}}{{index .RepoDigests 0}}{{end}}' "${image}")"
+    digest="${repo_digest##*@}"
+  fi
 
   if [[ "${digest}" != sha256:* ]]; then
-    echo "Error: podman did not report an image digest (got '${digest}')." >&2
+    echo "Error: ${tool} did not report an image digest (got '${digest}')." >&2
     exit 1
   fi
   echo "${ATE_ENV_IMAGE_REPO}/ate-env@${digest}"
