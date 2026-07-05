@@ -73,20 +73,26 @@ ate-env serve --config config.yaml
 
 ## API
 
-### `POST /v1/environments/{env}/sessions/{session_id}/resume`
+### Resume
+
+`POST /v1/environments/{env}/sessions/{session_id}/resume`
 
 Create (if needed) and resume the actor for the session in `{env}`.
 
 **Response:** `{ "status": "ok" }`
 
-### `POST /v1/environments/{env}/sessions/{session_id}/suspend`
+### Suspend
+
+`POST /v1/environments/{env}/sessions/{session_id}/suspend`
 
 Suspend the session's actor.
 
 **Response:** `{ "status": "ok" }`
 
 
-### `POST /v1/environments/{env}/sessions/{session_id}`
+### Tool Calls
+
+`POST /v1/environments/{env}/sessions/{session_id}`
 
 Execute a tool call in the session's actor. The session must have been resumed first. Only tools configured/enabled for `{env}` can be executed. The tool call is inlined into the request body alongside `env_variables`.
 
