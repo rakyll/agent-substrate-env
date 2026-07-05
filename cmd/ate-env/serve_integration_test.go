@@ -208,45 +208,52 @@ func TestIntegration_SessionLifecycle(t *testing.T) {
 		t.Fatalf("second resume: expected 200, got %d: %s", code, body)
 	}
 
-	// Execute a bash call with a per-call env var and a write/read file cycle
-	// in one request.
+	// Execute one tool call per request: a bash call with a per-call env var,
+	// then a write/read file cycle.
 	filePath := filepath.Join(t.TempDir(), "hello.txt")
 	fileArgs, _ := json.Marshal(map[string]string{"path": filePath, "content": "written by test"})
 	readArgs, _ := json.Marshal(map[string]string{"path": filePath})
-	reqBody, _ := json.Marshal(session.ExecuteRequest{
-		EnvVariables: []session.EnvVariable{{Name: "IT_GREETING", Value: "hola"}},
-		Inputs: []session.ToolCall{
-			{CallID: "c1", Type: "function_call", Function: session.FunctionCall{Name: "bash", Arguments: `{"command": "echo $IT_GREETING"}`}},
-			{CallID: "c2", Type: "function_call", Function: session.FunctionCall{Name: "write_file", Arguments: string(fileArgs)}},
-			{CallID: "c3", Type: "function_call", Function: session.FunctionCall{Name: "read_file", Arguments: string(readArgs)}},
+	for _, call := range []struct {
+		req  session.ToolRequest
+		want string
+	}{
+		{
+			req: session.ToolRequest{
+				EnvVariables: []session.EnvVariable{{Name: "IT_GREETING", Value: "hola"}},
+				ToolCall:     session.ToolCall{CallID: "c1", Type: "function_call", Function: session.FunctionCall{Name: "bash", Arguments: `{"command": "echo $IT_GREETING"}`}},
+			},
+			want: "hola\n",
 		},
-	})
-
-	code, body = postJSON(t, sessionURL, string(reqBody))
-	if code != http.StatusOK {
-		t.Fatalf("execute: expected 200, got %d: %s", code, body)
-	}
-	var execResp session.ExecuteResponse
-	if err := json.Unmarshal(body, &execResp); err != nil {
-		t.Fatalf("execute: failed to decode response: %v", err)
-	}
-	if len(execResp.Outputs) != 3 {
-		t.Fatalf("execute: expected 3 outputs, got %d: %s", len(execResp.Outputs), body)
-	}
-	for i, want := range []struct{ callID, output string }{
-		{"c1", "hola\n"},
-		{"c2", ""}, // write_file output is informational; content is checked below
-		{"c3", "written by test"},
+		{
+			req: session.ToolRequest{
+				ToolCall: session.ToolCall{CallID: "c2", Type: "function_call", Function: session.FunctionCall{Name: "write_file", Arguments: string(fileArgs)}},
+			},
+			want: "", // write_file output is informational; content is checked below
+		},
+		{
+			req: session.ToolRequest{
+				ToolCall: session.ToolCall{CallID: "c3", Type: "function_call", Function: session.FunctionCall{Name: "read_file", Arguments: string(readArgs)}},
+			},
+			want: "written by test",
+		},
 	} {
-		out := execResp.Outputs[i]
+		reqBody, _ := json.Marshal(call.req)
+		code, body = postJSON(t, sessionURL, string(reqBody))
+		if code != http.StatusOK {
+			t.Fatalf("execute %s: expected 200, got %d: %s", call.req.CallID, code, body)
+		}
+		var out session.ToolResponse
+		if err := json.Unmarshal(body, &out); err != nil {
+			t.Fatalf("execute %s: failed to decode response: %v", call.req.CallID, err)
+		}
 		if out.Type != "function_call_output" {
-			t.Errorf("execute output %d: expected type 'function_call_output', got %q", i, out.Type)
+			t.Errorf("execute %s: expected type 'function_call_output', got %q", call.req.CallID, out.Type)
 		}
-		if out.CallID != want.callID {
-			t.Errorf("execute output %d: expected call_id %q, got %q", i, want.callID, out.CallID)
+		if out.CallID != call.req.CallID {
+			t.Errorf("execute %s: expected call_id %q, got %q", call.req.CallID, call.req.CallID, out.CallID)
 		}
-		if want.output != "" && out.Output != want.output {
-			t.Errorf("execute output %d: expected output %q, got %q", i, want.output, out.Output)
+		if call.want != "" && out.Output != call.want {
+			t.Errorf("execute %s: expected output %q, got %q", call.req.CallID, call.want, out.Output)
 		}
 	}
 	if got, err := os.ReadFile(filePath); err != nil || string(got) != "written by test" {
@@ -255,21 +262,21 @@ func TestIntegration_SessionLifecycle(t *testing.T) {
 
 	// A tool outside the environment's allowlist yields an error output, not an
 	// HTTP error.
-	code, body = postJSON(t, sessionURL, `{"inputs":[{"call_id":"c4","type":"function_call","function":{"name":"web_fetcher","arguments":"{}"}}]}`)
+	code, body = postJSON(t, sessionURL, `{"call_id":"c4","type":"function_call","function":{"name":"web_fetcher","arguments":"{}"}}`)
 	if code != http.StatusOK {
 		t.Fatalf("execute disallowed tool: expected 200, got %d: %s", code, body)
 	}
-	execResp = session.ExecuteResponse{}
-	if err := json.Unmarshal(body, &execResp); err != nil {
+	var disallowed session.ToolResponse
+	if err := json.Unmarshal(body, &disallowed); err != nil {
 		t.Fatalf("execute disallowed tool: failed to decode response: %v", err)
 	}
-	if len(execResp.Outputs) != 1 || !strings.Contains(execResp.Outputs[0].Output, "not enabled in environment 'bash-env'") {
+	if !strings.Contains(disallowed.Output, "not enabled in environment 'bash-env'") {
 		t.Errorf("execute disallowed tool: expected not-enabled error output, got %s", body)
 	}
 
 	// An unknown environment is rejected outright.
 	code, _ = postJSON(t, srv.URL+"/v1/environments/no-such-env/sessions/"+sessionID,
-		`{"inputs":[{"call_id":"c5","type":"function_call","function":{"name":"bash","arguments":"{\"command\":\"true\"}"}}]}`)
+		`{"call_id":"c5","type":"function_call","function":{"name":"bash","arguments":"{\"command\":\"true\"}"}}`)
 	if code != http.StatusInternalServerError {
 		t.Errorf("execute unknown env: expected 500, got %d", code)
 	}

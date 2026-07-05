@@ -130,44 +130,37 @@ func (s *SessionManager) Suspend(ctx context.Context, sessionID string) error {
 	return nil
 }
 
-// Execute parses and runs multiple tool calls inside the sandboxed actor.
-func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName string, envVariables []EnvVariable, toolCalls []ToolCall) ([]ToolResponse, error) {
+// Execute parses and runs a single tool call inside the sandboxed actor.
+func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName string, envVariables []EnvVariable, tc ToolCall) (ToolResponse, error) {
 	if sessionID == "" {
-		return nil, fmt.Errorf("session_id cannot be empty")
+		return ToolResponse{}, fmt.Errorf("session_id cannot be empty")
 	}
-	if len(toolCalls) == 0 {
-		return nil, fmt.Errorf("no valid tool calls found in inputs")
+	if tc.Function.Name == "" {
+		return ToolResponse{}, fmt.Errorf("no tool call found in request")
 	}
 
 	var allowedTools []string
 	if mapped, exists := s.environments[envName]; exists {
 		allowedTools = mapped.Tools
 	} else {
-		return nil, fmt.Errorf("unknown environment %q", envName)
+		return ToolResponse{}, fmt.Errorf("unknown environment %q", envName)
 	}
 
-	var responses []ToolResponse
-	for _, tc := range toolCalls {
-		// Verify if tool is enabled in this environment
-		if !isToolAllowed(tc.Function.Name, allowedTools) {
-			callID := tc.CallID
-			if callID == "" {
-				callID = tc.ID
-			}
-			responses = append(responses, ToolResponse{
-				Type:   "function_call_output",
-				Name:   tc.Function.Name,
-				CallID: callID,
-				Output: fmt.Sprintf("Error: tool '%s' is not enabled in environment '%s'", tc.Function.Name, envName),
-			})
-			continue
+	// Verify if tool is enabled in this environment
+	if !isToolAllowed(tc.Function.Name, allowedTools) {
+		callID := tc.CallID
+		if callID == "" {
+			callID = tc.ID
 		}
-
-		resp := s.executeToolCall(ctx, envVariables, tc)
-		responses = append(responses, resp)
+		return ToolResponse{
+			Type:   "function_call_output",
+			Name:   tc.Function.Name,
+			CallID: callID,
+			Output: fmt.Sprintf("Error: tool '%s' is not enabled in environment '%s'", tc.Function.Name, envName),
+		}, nil
 	}
 
-	return responses, nil
+	return s.executeToolCall(ctx, envVariables, tc), nil
 }
 
 func isToolAllowed(tool string, allowed []string) bool {

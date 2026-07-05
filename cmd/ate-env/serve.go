@@ -118,7 +118,7 @@ func handleSuspend(sm *session.SessionManager) http.HandlerFunc {
 // handleExecute handles session tool execution requests.
 func handleExecute(sm *session.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req session.ExecuteRequest
+		var req session.ToolRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, fmt.Sprintf("invalid request payload: %v", err), http.StatusBadRequest)
 			return
@@ -126,15 +126,15 @@ func handleExecute(sm *session.SessionManager) http.HandlerFunc {
 
 		envName := r.PathValue("env")
 		sessionID := r.PathValue("session_id")
-		responses, err := sm.Execute(r.Context(), sessionID, envName, req.EnvVariables, req.Inputs)
+		response, err := sm.Execute(r.Context(), sessionID, envName, req.EnvVariables, req.ToolCall)
 		if err != nil {
-			log.Printf("failed to execute tool calls for session %s: %v", sessionID, err)
-			http.Error(w, fmt.Sprintf("failed to execute tool calls: %v", err), http.StatusInternalServerError)
+			log.Printf("failed to execute tool call for session %s: %v", sessionID, err)
+			http.Error(w, fmt.Sprintf("failed to execute tool call: %v", err), http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(session.ExecuteResponse{Outputs: responses}); err != nil {
+		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Printf("failed to encode execute response for session %s: %v", sessionID, err)
 		}
 	}

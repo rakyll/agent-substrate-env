@@ -38,37 +38,31 @@ func TestSessionManager_Execute(t *testing.T) {
 
 	// 1. Test "bash" tool call runs locally and returns stdout.
 	t.Run("bash tool", func(t *testing.T) {
-		inputs := []ToolCall{
-			{
-				ID:   "call-1",
-				Type: "function",
-				Function: FunctionCall{
-					Name:      "bash",
-					Arguments: `{"command": "echo hello $SESSION_VAR"}`,
-				},
+		input := ToolCall{
+			ID:   "call-1",
+			Type: "function",
+			Function: FunctionCall{
+				Name:      "bash",
+				Arguments: `{"command": "echo hello $SESSION_VAR"}`,
 			},
 		}
 
-		resps, err := store.Execute(context.Background(), sessionID, "bash-env", envVars, inputs)
+		resp, err := store.Execute(context.Background(), sessionID, "bash-env", envVars, input)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
-		if len(resps) != 1 {
-			t.Fatalf("Expected 1 response, got %d", len(resps))
+		if resp.Type != "function_call_output" {
+			t.Errorf("Expected type 'function_call_output', got %s", resp.Type)
 		}
 
-		if resps[0].Type != "function_call_output" {
-			t.Errorf("Expected type 'function_call_output', got %s", resps[0].Type)
-		}
-
-		if resps[0].CallID != "call-1" {
-			t.Errorf("Expected call_id 'call-1', got %s", resps[0].CallID)
+		if resp.CallID != "call-1" {
+			t.Errorf("Expected call_id 'call-1', got %s", resp.CallID)
 		}
 
 		// The command runs locally with the per-call env var merged in.
-		if resps[0].Output != "hello session_val\n" {
-			t.Errorf("Expected content 'hello session_val\\n', got %q", resps[0].Output)
+		if resp.Output != "hello session_val\n" {
+			t.Errorf("Expected content 'hello session_val\\n', got %q", resp.Output)
 		}
 	})
 
@@ -79,23 +73,17 @@ func TestSessionManager_Execute(t *testing.T) {
 
 	// 2. Test "write_file" tool call
 	t.Run("write_file tool", func(t *testing.T) {
-		inputs := []ToolCall{
-			{
-				ID:   "call-2",
-				Type: "function",
-				Function: FunctionCall{
-					Name:      "write_file",
-					Arguments: `{"path": "` + filePath + `", "content": "package main"}`,
-				},
+		input := ToolCall{
+			ID:   "call-2",
+			Type: "function",
+			Function: FunctionCall{
+				Name:      "write_file",
+				Arguments: `{"path": "` + filePath + `", "content": "package main"}`,
 			},
 		}
 
-		resps, err := store.Execute(context.Background(), sessionID, "bash-env", nil, inputs)
-		if err != nil {
+		if _, err := store.Execute(context.Background(), sessionID, "bash-env", nil, input); err != nil {
 			t.Fatalf("Execute failed: %v", err)
-		}
-		if len(resps) != 1 {
-			t.Fatalf("Expected 1 response, got %d", len(resps))
 		}
 
 		// The file (and its parent directory) should now exist on disk.
@@ -110,68 +98,56 @@ func TestSessionManager_Execute(t *testing.T) {
 
 	// 3. Test "read_file" tool call
 	t.Run("read_file tool", func(t *testing.T) {
-		inputs := []ToolCall{
-			{
-				ID:   "call-3",
-				Type: "function",
-				Function: FunctionCall{
-					Name:      "read_file",
-					Arguments: `{"path": "` + filePath + `"}`,
-				},
+		input := ToolCall{
+			ID:   "call-3",
+			Type: "function",
+			Function: FunctionCall{
+				Name:      "read_file",
+				Arguments: `{"path": "` + filePath + `"}`,
 			},
 		}
 
-		resps, err := store.Execute(context.Background(), sessionID, "bash-env", nil, inputs)
+		resp, err := store.Execute(context.Background(), sessionID, "bash-env", nil, input)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
-		if len(resps) != 1 {
-			t.Fatalf("Expected 1 response, got %d", len(resps))
+		if resp.CallID != "call-3" {
+			t.Errorf("Expected call_id 'call-3', got %s", resp.CallID)
 		}
 
-		if resps[0].CallID != "call-3" {
-			t.Errorf("Expected call_id 'call-3', got %s", resps[0].CallID)
-		}
-
-		if resps[0].Output != "package main" {
-			t.Errorf("Expected content 'package main', got '%s'", resps[0].Output)
+		if resp.Output != "package main" {
+			t.Errorf("Expected content 'package main', got '%s'", resp.Output)
 		}
 	})
 
 	// 4. Test unsupported tool call returns error response
 	t.Run("unsupported tool call", func(t *testing.T) {
-		inputs := []ToolCall{
-			{
-				ID:   "call-4",
-				Type: "function",
-				Function: FunctionCall{
-					Name:      "custom_unsupported_tool",
-					Arguments: `{"arg": "value"}`,
-				},
+		input := ToolCall{
+			ID:   "call-4",
+			Type: "function",
+			Function: FunctionCall{
+				Name:      "custom_unsupported_tool",
+				Arguments: `{"arg": "value"}`,
 			},
 		}
 
-		resps, err := store.Execute(context.Background(), sessionID, "bash-env", nil, inputs)
+		resp, err := store.Execute(context.Background(), sessionID, "bash-env", nil, input)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
-		if len(resps) != 1 {
-			t.Fatalf("Expected 1 response, got %d", len(resps))
+		if resp.Type != "function_call_output" {
+			t.Errorf("Expected type 'function_call_output', got %s", resp.Type)
 		}
 
-		if resps[0].Type != "function_call_output" {
-			t.Errorf("Expected type 'function_call_output', got %s", resps[0].Type)
-		}
-
-		if resps[0].CallID != "call-4" {
-			t.Errorf("Expected call_id 'call-4', got %s", resps[0].CallID)
+		if resp.CallID != "call-4" {
+			t.Errorf("Expected call_id 'call-4', got %s", resp.CallID)
 		}
 
 		expectedErr := "Error: tool 'custom_unsupported_tool' is not enabled in environment 'bash-env'"
-		if resps[0].Output != expectedErr {
-			t.Errorf("Expected response content '%s', got '%s'", expectedErr, resps[0].Output)
+		if resp.Output != expectedErr {
+			t.Errorf("Expected response content '%s', got '%s'", expectedErr, resp.Output)
 		}
 	})
 }

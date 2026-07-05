@@ -26,19 +26,16 @@ type EnvDetails struct {
 	Tools        []string
 }
 
-// ExecuteRequest is the payload for
+// ToolRequest is the payload for
 // POST /v1/environments/{env}/sessions/{session_id}.
 //
 // The environment and session are taken from the URL path, so the body only
-// carries the per-call execution data.
-type ExecuteRequest struct {
+// carries the per-call execution data. Each request executes exactly one tool
+// call, whose fields are inlined into the body alongside env_variables, and
+// the response is the single ToolResponse for it.
+type ToolRequest struct {
 	EnvVariables []EnvVariable `json:"env_variables"`
-	Inputs       []ToolCall    `json:"inputs"`
-}
-
-// ExecuteResponse is the response payload for the execute endpoint.
-type ExecuteResponse struct {
-	Outputs []ToolResponse `json:"outputs"`
+	ToolCall
 }
 
 // ToolCall represents a requested tool call.

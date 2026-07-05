@@ -86,40 +86,30 @@ Suspend the session's actor.
 
 ### `POST /v1/environments/{env}/sessions/{session_id}`
 
-Execute one or more tool calls in the session's actor. The session must have been resumed first. Only tools configured/enabled for `{env}` can be executed.
+Execute a tool call in the session's actor. The session must have been resumed first. Only tools configured/enabled for `{env}` can be executed. The tool call is inlined into the request body alongside `env_variables`.
 
 ```json
 {
   "env_variables": [
     { "name": "MY_SECRET", "value": "c3ebfdfdk12345..." }
   ],
-  "inputs": [
-    {
-      "call_id": "call_1",
-      "type": "function_call",
-      "function": {
-        "name": "bash",
-        "arguments": "{\"command\": \"echo hi && ls\"}"
-      }
-    }
-  ]
+  "call_id": "call_1",
+  "type": "function_call",
+  "function": {
+    "name": "bash",
+    "arguments": "{\"command\": \"echo hi && ls\"}"
+  }
 }
 ```
 
-- `env_variables` — env vars merged into command executions for this call
-- `inputs` — list of tool calls to execute (**required**)
-
-**Response:**
+**Response:** the tool output:
 
 ```json
 {
-  "outputs": [
-    {
-      "name": "bash",
-      "call_id": "call_1",
-      "output": "hi\n..."
-    }
-  ]
+  "type": "function_call_output",
+  "name": "bash",
+  "call_id": "call_1",
+  "output": "hi\n..."
 }
 ```
 
@@ -149,7 +139,7 @@ curl -sX POST localhost:7777/v1/environments/bash-env/sessions/$SESSION_ID/resum
 # 2. Run a tool call with env vars
 curl -sX POST localhost:7777/v1/environments/bash-env/sessions/$SESSION_ID \
   -H 'Content-Type: application/json' \
-  -d '{"env_variables":[{"name":"MY_SECRET","value":"c3ebfdfdk12345..."}],"inputs":[{"call_id":"c1","type":"function_call","function":{"name":"bash","arguments":"{\"command\":\"uname -a\"}"}}]}'
+  -d '{"env_variables":[{"name":"MY_SECRET","value":"c3ebfdfdk12345..."}],"call_id":"c1","type":"function_call","function":{"name":"bash","arguments":"{\"command\":\"uname -a\"}"}}'
 
 # 3. Suspend when done
 curl -sX POST localhost:7777/v1/environments/bash-env/sessions/$SESSION_ID/suspend
