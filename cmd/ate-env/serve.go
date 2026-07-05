@@ -43,33 +43,39 @@ func newServeCmd() *cobra.Command {
 }
 
 func runServe(configPath string) error {
-	cfg, store, err := newSessionManager(configPath)
+	cfg, sm, err := newSessionManager(configPath)
 	if err != nil {
 		return err
 	}
 
 	log.Printf("Starting Agent Substrate environment service...")
 
-	mux := http.NewServeMux()
-	// Sessions are sub-resources of an environment. Both the environment and
-	// the session id live in the path on every call, which the stateless
-	// service needs anyway to pick the template + tool allowlist.
-	//
-	// Executing tool calls is the primary operation on a session, so it is a
-	// POST to the session resource itself. Lifecycle transitions hang off it as
-	// trailing action segments (rather than the AIP-style {id}:resume custom
-	// method, since net/http requires a path wildcard to span a full segment).
-	mux.HandleFunc("POST /v1/environments/{env}/sessions/{session_id}", handleExecute(store))
-	mux.HandleFunc("POST /v1/environments/{env}/sessions/{session_id}/resume", handleResume(store))
-	mux.HandleFunc("POST /v1/environments/{env}/sessions/{session_id}/suspend", handleSuspend(store))
-	mux.HandleFunc("GET /healthz", handleHealthz)
-
+	mux := newMux(sm)
 	addr := listenAddr(cfg.Listen)
 	log.Printf("Serving HTTP requests on %s", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		return fmt.Errorf("HTTP server failed: %w", err)
 	}
 	return nil
+}
+
+// newMux builds the service's HTTP routes around the given SessionManager.
+//
+// Sessions are sub-resources of an environment. Both the environment and
+// the session id live in the path on every call, which the stateless
+// service needs anyway to pick the template + tool allowlist.
+//
+// Executing tool calls is the primary operation on a session, so it is a
+// POST to the session resource itself. Lifecycle transitions hang off it as
+// trailing action segments (rather than the AIP-style {id}:resume custom
+// method, since net/http requires a path wildcard to span a full segment).
+func newMux(store *session.SessionManager) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /v1/environments/{env}/sessions/{session_id}", handleExecute(store))
+	mux.HandleFunc("POST /v1/environments/{env}/sessions/{session_id}/resume", handleResume(store))
+	mux.HandleFunc("POST /v1/environments/{env}/sessions/{session_id}/suspend", handleSuspend(store))
+	mux.HandleFunc("GET /healthz", handleHealthz)
+	return mux
 }
 
 // handleResume handles session resume requests.
