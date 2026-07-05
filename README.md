@@ -66,10 +66,37 @@ environments:
 
 ## Usage
 
+Run the service locally:
+
 ```bash
-# TODO: Update with Substrate deployment instructions.
 ate-env serve --config config.yaml
 ```
+
+### Deploying to a cluster
+
+`./manifests/install.sh` builds the image with [ko](https://ko.build) (no Dockerfile needed) and deploys the service to the `ate-env` namespace of your current kubectl context. The cluster must already have [Agent Substrate](https://github.com/agent-substrate/substrate) installed and reachable at the `ate.ateapi` endpoint configured in `config.yaml`.
+
+```bash
+# Build, push, and deploy. Set PROJECT_ID to push to gcr.io/$PROJECT_ID,
+# or set KO_DOCKER_REPO directly for any other registry.
+PROJECT_ID=my-project ./manifests/install.sh --deploy-ate-env
+
+# Reach the service locally (optional)
+kubectl port-forward -n ate-env svc/ate-env 7777:7777
+
+# Tear it down
+./manifests/install.sh --delete-ate-env
+```
+
+Environment variables the script honors:
+
+| Variable | Description |
+| -------- | ----------- |
+| `PROJECT_ID` | Sets `KO_DOCKER_REPO=gcr.io/$PROJECT_ID`. |
+| `KO_DOCKER_REPO` | Registry to push the image to (required unless `PROJECT_ID` or `ATE_ENV_IMAGE` is set). |
+| `ATE_ENV_IMAGE` | Use a prebuilt digest-pinned image instead of building with ko. |
+| `KUBECTL_CONTEXT` | kubectl context to deploy to (defaults to the current context). |
+| `ATE_ENV_WAIT_TIMEOUT` | Rollout wait timeout (default `5m`). |
 
 ## API
 
