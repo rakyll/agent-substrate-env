@@ -8,8 +8,6 @@ The service manages the actor's lifecycle (create → resume → suspend)
 via the Agent Substrate control API, and executes incoming tool calls in-process
 against the local environment. It returns tool call responses.
 
----
-
 ## Overview
 
 ```mermaid
@@ -59,7 +57,6 @@ environments:
 | `ate.atespace`  | `default`          | Actor template atespace.                                |
 | `environments`  | `bash-env` -> `bash-env-template` | List of predefined client-facing environment to Agent Substrate template mappings. |
 
----
 
 ## Usage
 
@@ -67,7 +64,6 @@ environments:
 # TODO: Update with Substrate deployment instructions.
 ate-env serve --config config.yaml
 ```
----
 
 ## API
 
@@ -113,8 +109,6 @@ Execute a tool call in the session's actor. The session must have been resumed f
 }
 ```
 
----
-
 ## Supported tools
 
 All tool calls run in-process in this binary. The `bash` tool executes the command locally with `sh -c` via `os/exec`. File operation tools (`read_file`, `write_file`, `list_dir`) use the Go standard library directly — they never shell out.
@@ -125,8 +119,6 @@ All tool calls run in-process in this binary. The `bash` tool executes the comma
 | `read_file`   | `path` | Reads and returns the file contents (`os.ReadFile`). |
 | `write_file`  | `path`, `content` | Creates parent dirs (`os.MkdirAll`) and writes the content (`os.WriteFile`). |
 | `list_dir`    | `path` | Lists the directory (`os.ReadDir`), `ls -la` style. |
-
----
 
 ## Example: end-to-end with curl
 
@@ -144,8 +136,6 @@ curl -sX POST localhost:7777/v1/environments/bash-env/sessions/$SESSION_ID \
 # 3. Suspend when done
 curl -sX POST localhost:7777/v1/environments/bash-env/sessions/$SESSION_ID/suspend
 ```
-
----
 
 ## License
 
