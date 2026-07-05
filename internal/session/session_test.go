@@ -282,6 +282,9 @@ environments:
 	if cfg.Ate.Atespace != "my-custom-ns" {
 		t.Errorf("expected atespace 'my-custom-ns', got '%s'", cfg.Ate.Atespace)
 	}
+	if cfg.SkillsDir != "/skills" {
+		t.Errorf("expected default SkillsDir '/skills', got '%s'", cfg.SkillsDir)
+	}
 	if len(cfg.Environments) != 1 {
 		t.Fatalf("expected 1 environment, got %d", len(cfg.Environments))
 	}
