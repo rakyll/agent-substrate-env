@@ -174,7 +174,7 @@ The service supports [Agent Skills](https://agentskills.io) out of the box. A sk
 
 Skills follow progressive disclosure: `list_skills` returns only each skill's name and description so the agent can pick one cheaply, and `activate_skill` loads the chosen skill's full instructions along with the paths of its bundled files, which the agent can then `read_file` or execute with `bash`. Both tools must be listed in an environment's `allowed_tools` to be callable.
 
-## Example: end-to-end with curl
+## Example
 
 ```bash
 export SESSION_ID=123e4567-e89b-12d3-a456-426614174000
