@@ -100,7 +100,7 @@ Applications are responsible for session resumption and suspension. A typical ap
 4. Tool call
 5. Suspend session
 
-### Resume
+### Session Resumption
 
 `POST /v1/environments/{env}/sessions/{session_id}/resume`
 
@@ -108,7 +108,7 @@ Create (if needed) and resume the actor for the session in `{env}`.
 
 **Response:** `{ "status": "ok" }`
 
-### Suspend
+### Session Suspension
 
 `POST /v1/environments/{env}/sessions/{session_id}/suspend`
 
