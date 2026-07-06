@@ -87,8 +87,8 @@ Environment variables the script honors:
 | `GOOGLE_PROJECT_ID` | Sets `ATE_ENV_IMAGE_REPO=gcr.io/$GOOGLE_PROJECT_ID`. |
 | `ATE_ENV_IMAGE_REPO` | Registry to push the image to (required unless `GOOGLE_PROJECT_ID` or `ATE_ENV_IMAGE` is set). |
 | `ATE_ENV_IMAGE` | Use a prebuilt digest-pinned image instead of building one. |
-| `KUBECTL_CONTEXT` | kubectl context to deploy to (defaults to the current context). |
 | `ATE_ENV_WAIT_TIMEOUT` | Rollout wait timeout (default `5m`). |
+| `KUBECTL_CONTEXT` | kubectl context to deploy to (defaults to the current context). |
 
 ## API
 
