@@ -155,7 +155,7 @@ deploy_ate_env() {
 
   echo ""
   echo "Forward the ate-env service by running the following command (optional)"
-  echo "kubectl port-forward -n ate-env svc/ate-env 7777:7777"
+  echo "kubectl port-forward -n ate-env deploy/ate-env 7777:7777"
 }
 
 # delete_ate_env removes the ate-env service and its namespace.

@@ -54,7 +54,7 @@ metadata:
   labels:
     app: ate-env
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: ate-env
@@ -80,12 +80,6 @@ spec:
               port: 7777
             initialDelaySeconds: 5
             periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 7777
-            initialDelaySeconds: 10
-            periodSeconds: 20
           volumeMounts:
             - name: config
               mountPath: /etc/ate-env
@@ -95,16 +89,15 @@ spec:
           configMap:
             name: ate-env-config
 ---
-apiVersion: v1
-kind: Service
+# ---------------------------------------------------------------------------
+# Agent Substrate Actor Template
+# ---------------------------------------------------------------------------
+apiVersion: ate.gke.io/v1alpha1
+kind: ActorTemplate
 metadata:
-  name: ate-env
-  namespace: ate-env
-  labels:
-    app: ate-env
+  name: bash-env-template
+  namespace: default
 spec:
-  selector:
-    app: ate-env
-  ports:
-    - port: 7777
-      targetPort: 7777
+  workerPoolRef:
+    name: bash-env-workerpool
+

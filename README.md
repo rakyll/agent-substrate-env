@@ -73,7 +73,7 @@ Your cluster must already have [Agent Substrate](https://github.com/agent-substr
 GOOGLE_PROJECT_ID=my-project ./manifests/install.sh --deploy-ate-env
 
 # Reach the service locally (optional)
-kubectl port-forward -n ate-env svc/ate-env 7777:7777
+kubectl port-forward -n ate-env deploy/ate-env 7777:7777
 
 # Tear it down
 ./manifests/install.sh --delete-ate-env
