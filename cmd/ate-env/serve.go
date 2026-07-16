@@ -127,7 +127,7 @@ func handleExecute(sm *session.SessionManager) http.HandlerFunc {
 
 		envName := r.PathValue("env")
 		sessionID := r.PathValue("session_id")
-		response, err := sm.Execute(r.Context(), sessionID, envName, req.EnvVariables, req.ToolCall)
+		response, err := sm.Execute(r.Context(), sessionID, envName, req)
 		if err != nil {
 			log.Printf("failed to execute tool call for session %s: %v", sessionID, err)
 			http.Error(w, fmt.Sprintf("failed to execute tool call: %v", err), http.StatusInternalServerError)

@@ -36,7 +36,8 @@ type EnvDetails struct {
 // call, whose fields are inlined into the body alongside env_variables, and
 // the response is the single ToolResponse for it.
 type ToolRequest struct {
-	EnvVariables []EnvVariable `json:"env_variables"`
+	AutoResume   bool          `json:"auto_resume,omitempty"`
+	EnvVariables []EnvVariable `json:"env_variables,omitempty"`
 	ToolCall
 }
 

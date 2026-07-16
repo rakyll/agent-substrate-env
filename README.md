@@ -114,10 +114,11 @@ Suspend the session's actor.
 
 `POST /v1/environments/{env}/sessions/{session_id}`
 
-Execute a tool call in the session's actor. The session must have been resumed first. Only tools configured/enabled for `{env}` can be executed. The tool call is inlined into the request body alongside `env_variables`.
+Execute a tool call in the session's actor. Only tools configured/enabled for `{env}` can be executed. The tool call is inlined into the request body alongside `env_variables`. Setting `"auto_resume": true` automatically creates/resumes the session actor prior to executing the tool call, and automatically suspends it at the end of the tool call.
 
 ```json
 {
+  "auto_resume": true,
   "env_variables": [
     { "name": "MY_SECRET", "value": "c3ebfdfdk12345..." }
   ],
@@ -169,19 +170,30 @@ Skills follow progressive disclosure: `list_skills` returns only each skill's na
 
 ## Example
 
+Explicit lifecycle management:
+
 ```bash
 export SESSION_ID=123e4567-e89b-12d3-a456-426614174000
 
 # 1. Resume the session
-curl -sX POST localhost:7777/v1/environments/default-env/sessions/$SESSION_ID/resume
+curl -sX POST localhost:7777/v1/environments/my-env/sessions/$SESSION_ID/resume
 
 # 2. Run a tool call with env vars
-curl -sX POST localhost:7777/v1/environments/default-env/sessions/$SESSION_ID \
+curl -sX POST localhost:7777/v1/environments/my-env/sessions/$SESSION_ID \
   -H 'Content-Type: application/json' \
   -d '{"env_variables":[{"name":"MY_SECRET","value":"c3ebfdfdk12345..."}],"call_id":"c1","type":"function_call","function":{"name":"bash","arguments":"{\"command\":\"uname -a\"}"}}'
 
 # 3. Suspend when done
-curl -sX POST localhost:7777/v1/environments/default-env/sessions/$SESSION_ID/suspend
+curl -sX POST localhost:7777/v1/environments/my-env/sessions/$SESSION_ID/suspend
+```
+
+Or using `auto_resume`:
+
+```bash
+# Execute tool call with auto_resume enabled (creates/resumes actor automatically)
+curl -sX POST localhost:7777/v1/environments/my-env/sessions/$SESSION_ID \
+  -H 'Content-Type: application/json' \
+  -d '{"auto_resume":true,"call_id":"c1","type":"function_call","function":{"name":"bash","arguments":"{\"command\":\"uname -a\"}"}}'
 ```
 
 ## License

@@ -149,12 +149,25 @@ func (s *SessionManager) Suspend(ctx context.Context, sessionID, envName string)
 }
 
 // Execute parses and runs a single tool call inside the sandboxed actor.
-func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName string, envVariables []EnvVariable, tc ToolCall) (ToolResponse, error) {
+// If req.AutoResume is true, it resumes the session actor before executing and
+// automatically suspends it at the end of the tool call.
+func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName string, req ToolRequest) (ToolResponse, error) {
 	if sessionID == "" {
 		return ToolResponse{}, fmt.Errorf("session_id cannot be empty")
 	}
-	if tc.Function.Name == "" {
+	if req.Function.Name == "" {
 		return ToolResponse{}, fmt.Errorf("no tool call found in request")
+	}
+
+	if req.AutoResume {
+		if err := s.Resume(ctx, sessionID, envName); err != nil {
+			return ToolResponse{}, fmt.Errorf("failed to auto-resume session: %w", err)
+		}
+		defer func() {
+			if err := s.Suspend(ctx, sessionID, envName); err != nil {
+				log.Printf("failed to auto-suspend session %s in environment %s: %v", sessionID, envName, err)
+			}
+		}()
 	}
 
 	var allowedTools []string
@@ -167,20 +180,20 @@ func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName 
 	}
 
 	// Verify if tool is enabled in this environment
-	if !isToolAllowed(tc.Function.Name, allowedTools) {
-		callID := tc.CallID
+	if !isToolAllowed(req.Function.Name, allowedTools) {
+		callID := req.CallID
 		if callID == "" {
-			callID = tc.ID
+			callID = req.ID
 		}
 		return ToolResponse{
 			Type:   "function_call_output",
-			Name:   tc.Function.Name,
+			Name:   req.Function.Name,
 			CallID: callID,
-			Output: fmt.Sprintf("Error: tool '%s' is not enabled in environment '%s'", tc.Function.Name, envName),
+			Output: fmt.Sprintf("Error: tool '%s' is not enabled in environment '%s'", req.Function.Name, envName),
 		}, nil
 	}
 
-	return s.executeToolCall(ctx, envVariables, tc, skillsDir), nil
+	return s.executeToolCall(ctx, req.EnvVariables, req.ToolCall, skillsDir), nil
 }
 
 func isToolAllowed(tool string, allowed []string) bool {

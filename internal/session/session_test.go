@@ -50,7 +50,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "default-env", envVars, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", ToolRequest{EnvVariables: envVars, ToolCall: input})
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -85,7 +85,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		if _, err := store.Execute(context.Background(), sessionID, "default-env", nil, input); err != nil {
+		if _, err := store.Execute(context.Background(), sessionID, "default-env", ToolRequest{ToolCall: input}); err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
@@ -110,7 +110,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "default-env", nil, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", ToolRequest{ToolCall: input})
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -135,7 +135,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "default-env", nil, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", ToolRequest{ToolCall: input})
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -164,7 +164,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "default-env", nil, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", ToolRequest{ToolCall: input})
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -186,7 +186,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "default-env", nil, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", ToolRequest{ToolCall: input})
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -210,13 +210,36 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "default-env", nil, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", ToolRequest{ToolCall: input})
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
 		if !strings.Contains(resp.Output, `skill "no-such-skill" not found`) {
 			t.Errorf("Expected not-found error output, got %q", resp.Output)
+		}
+	})
+
+	// 8. Test AutoResume attempts to resume session actor.
+	t.Run("auto_resume enabled", func(t *testing.T) {
+		input := ToolRequest{
+			AutoResume: true,
+			ToolCall: ToolCall{
+				ID:   "call-8",
+				Type: "function",
+				Function: FunctionCall{
+					Name:      "bash",
+					Arguments: `{"command": "true"}`,
+				},
+			},
+		}
+
+		// Dialing localhost:8080 (where no ateapi gRPC server is listening) during auto-resume should return an error.
+		_, err := store.Execute(context.Background(), sessionID, "default-env", input)
+		if err == nil {
+			t.Errorf("Expected auto-resume error due to missing gRPC endpoint, got nil")
+		} else if !strings.Contains(err.Error(), "failed to auto-resume session") {
+			t.Errorf("Expected auto-resume error, got: %v", err)
 		}
 	})
 }
