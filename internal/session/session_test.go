@@ -25,10 +25,11 @@ import (
 )
 
 func TestSessionManager_Execute(t *testing.T) {
-	store := NewSessionManager("localhost:8080", writeTestSkills(t), map[string]EnvDetails{
+	store := NewSessionManager("localhost:8080", map[string]EnvDetails{
 		"default-env": {
 			TemplateName: "default-env-template",
 			Atespace:     "default",
+			SkillsDir:    writeTestSkills(t),
 			Tools:        []string{"bash", "read_file", "write_file", "list_skills", "activate_skill"},
 		},
 	})
@@ -255,6 +256,7 @@ environments:
   - name: "default-env"
     template: "default-env-template"
     atespace: "my-custom-ns"
+    skills_dir: "/custom-skills"
     allowed_tools:
       - "bash"
 `
@@ -280,14 +282,11 @@ environments:
 	if cfg.Ate.Ateapi != "grpc.example.com:443" {
 		t.Errorf("expected ateapi 'grpc.example.com:443', got '%s'", cfg.Ate.Ateapi)
 	}
-	if cfg.SkillsDir != "/skills" {
-		t.Errorf("expected default SkillsDir '/skills', got '%s'", cfg.SkillsDir)
-	}
 	if len(cfg.Environments) != 1 {
 		t.Fatalf("expected 1 environment, got %d", len(cfg.Environments))
 	}
 	env := cfg.Environments[0]
-	if env.Name != "default-env" || env.Template != "default-env-template" || env.Atespace != "my-custom-ns" {
+	if env.Name != "default-env" || env.Template != "default-env-template" || env.Atespace != "my-custom-ns" || env.SkillsDir != "/custom-skills" {
 		t.Errorf("unexpected environment mapping: %+v", env)
 	}
 	if len(env.AllowedTools) != 1 || env.AllowedTools[0] != "bash" {

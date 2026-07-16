@@ -24,6 +24,7 @@ type EnvVariable struct {
 type EnvDetails struct {
 	TemplateName string
 	Atespace     string
+	SkillsDir    string
 	Tools        []string
 }
 

@@ -30,13 +30,13 @@ type EnvironmentConfig struct {
 	Name         string   `yaml:"name"`
 	Template     string   `yaml:"template"`
 	Atespace     string   `yaml:"atespace"`
+	SkillsDir    string   `yaml:"skills_dir"`
 	AllowedTools []string `yaml:"allowed_tools"`
 }
 
 // Config represents the schema of the YAML configuration file.
 type Config struct {
 	Listen       string              `yaml:"listen"`
-	SkillsDir    string              `yaml:"skills_dir"`
 	Ate          AteConfig           `yaml:"ate"`
 	Environments []EnvironmentConfig `yaml:"environments"`
 }
@@ -44,8 +44,7 @@ type Config struct {
 // Default returns a Config initialized with default values.
 func Default() *Config {
 	return &Config{
-		Listen:    ":7777",
-		SkillsDir: "/skills",
+		Listen: ":7777",
 		Ate: AteConfig{
 			Ateapi: "ateapi.ate-system.svc.cluster.local:443",
 		},
@@ -54,6 +53,7 @@ func Default() *Config {
 				Name:         "default-env",
 				Template:     "default-env-template",
 				Atespace:     "default",
+				SkillsDir:    "/skills",
 				AllowedTools: []string{"bash", "read_file", "write_file", "list_dir", "list_skills", "activate_skill"},
 			},
 		},
@@ -80,9 +80,6 @@ func Load(path string) (*Config, error) {
 	if parsed.Listen != "" {
 		cfg.Listen = parsed.Listen
 	}
-	if parsed.SkillsDir != "" {
-		cfg.SkillsDir = parsed.SkillsDir
-	}
 	if parsed.Ate.Ateapi != "" {
 		cfg.Ate.Ateapi = parsed.Ate.Ateapi
 	}
@@ -90,6 +87,9 @@ func Load(path string) (*Config, error) {
 		for i := range parsed.Environments {
 			if parsed.Environments[i].Atespace == "" {
 				parsed.Environments[i].Atespace = "default"
+			}
+			if parsed.Environments[i].SkillsDir == "" {
+				parsed.Environments[i].SkillsDir = "/skills"
 			}
 		}
 		cfg.Environments = parsed.Environments

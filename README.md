@@ -35,9 +35,6 @@ Configuration is loaded from `config.yaml` in the working directory. If the file
 # Address/port for this HTTP service to listen on
 listen: ":7777"
 
-# Directory holding agentic skills, exposed via list_skills/activate_skill.
-skills_dir: "/skills"
-
 # Agent Substrate configuration.
 ate:
   ateapi: "ateapi.ate-system.svc.cluster.local:443"
@@ -47,6 +44,7 @@ environments:
   - name: "my-env"
     template: "default-env-template"
     atespace: "default"
+    skills_dir: "/skills"
     allowed_tools:
       - "bash"
       - "read_file"
@@ -59,8 +57,7 @@ environments:
 | Field           | Default            | Description                                             |
 | --------------- | ------------------ | ------------------------------------------------------- |
 | `listen`        | `:7777`            | Bind address.|
-| `skills_dir`    | `/skills`          | Directory holding agentic skills (see below).           |
-| `environments`  | `default-env` -> `default-env-template` | List of predefined client-facing environment configuration (template, atespace, allowed tools). |
+| `environments`  | `my-env` -> `default-env-template` | List of predefined client-facing environment configuration (template, atespace, skills_dir, allowed tools). |
 | `ate.ateapi`    | `ateapi.ate-system.svc.cluster.local:443` | Agent Substrate Control API endpoint.|
 
 

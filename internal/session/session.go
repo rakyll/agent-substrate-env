@@ -35,16 +35,13 @@ import (
 // SessionManager handles communication with Agent Substrate.
 type SessionManager struct {
 	ateapiAddr   string
-	skillsDir    string
 	environments map[string]EnvDetails
 }
 
-// NewSessionManager creates a new SessionManager. skillsDir is the directory
-// holding agentic skills (see skills.go); it may be empty to disable skills.
-func NewSessionManager(ateapiAddr, skillsDir string, environments map[string]EnvDetails) *SessionManager {
+// NewSessionManager creates a new SessionManager.
+func NewSessionManager(ateapiAddr string, environments map[string]EnvDetails) *SessionManager {
 	return &SessionManager{
 		ateapiAddr:   ateapiAddr,
-		skillsDir:    skillsDir,
 		environments: environments,
 	}
 }
@@ -161,8 +158,10 @@ func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName 
 	}
 
 	var allowedTools []string
+	var skillsDir string
 	if mapped, exists := s.environments[envName]; exists {
 		allowedTools = mapped.Tools
+		skillsDir = mapped.SkillsDir
 	} else {
 		return ToolResponse{}, fmt.Errorf("unknown environment %q", envName)
 	}
@@ -181,7 +180,7 @@ func (s *SessionManager) Execute(ctx context.Context, sessionID string, envName 
 		}, nil
 	}
 
-	return s.executeToolCall(ctx, envVariables, tc), nil
+	return s.executeToolCall(ctx, envVariables, tc, skillsDir), nil
 }
 
 func isToolAllowed(tool string, allowed []string) bool {
@@ -194,7 +193,7 @@ func isToolAllowed(tool string, allowed []string) bool {
 }
 
 // executeToolCall runs a single tool call locally in this binary.
-func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []EnvVariable, tc ToolCall) ToolResponse {
+func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []EnvVariable, tc ToolCall, skillsDir string) ToolResponse {
 	// OpenResponses uses call_id; OpenAI uses id. Let's support both.
 	callID := tc.CallID
 	if callID == "" {
@@ -267,7 +266,7 @@ func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []Env
 		return resp
 
 	case "list_skills":
-		out, err := listSkills(s.skillsDir)
+		out, err := listSkills(skillsDir)
 		if err != nil {
 			resp.Output = fmt.Sprintf("Error: %v", err)
 			return resp
@@ -281,7 +280,7 @@ func (s *SessionManager) executeToolCall(ctx context.Context, envVariables []Env
 			resp.Output = "Error: 'name' argument is required"
 			return resp
 		}
-		out, err := activateSkill(s.skillsDir, name)
+		out, err := activateSkill(skillsDir, name)
 		if err != nil {
 			resp.Output = fmt.Sprintf("Error: %v", err)
 			return resp

@@ -107,6 +107,7 @@ environments:
   - name: "default-env"
     template: %q
     atespace: %q
+    skills_dir: "/skills"
     allowed_tools:
       - "bash"
       - "read_file"

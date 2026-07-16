@@ -25,13 +25,13 @@ metadata:
 data:
   config.yaml: |
     listen: ":7777"
-    skills_dir: "/skills"
     ate:
       ateapi: "ateapi.ate-system.svc.cluster.local:443"
     environments:
       - name: "default-env"
         template: "default-env-template"
         atespace: "default"
+        skills_dir: "/skills"
         allowed_tools:
           - "bash"
           - "read_file"
