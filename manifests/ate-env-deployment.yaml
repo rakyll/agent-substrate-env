@@ -29,7 +29,7 @@ data:
     ate:
       ateapi: "ateapi.ate-system.svc.cluster.local:443"
     environments:
-      - name: "bash-env"
+      - name: "default-env"
         template: "default-env-template"
         atespace: "default"
         allowed_tools:

@@ -26,7 +26,7 @@ import (
 
 func TestSessionManager_Execute(t *testing.T) {
 	store := NewSessionManager("localhost:8080", writeTestSkills(t), map[string]EnvDetails{
-		"bash-env": {
+		"default-env": {
 			TemplateName: "default-env-template",
 			Atespace:     "default",
 			Tools:        []string{"bash", "read_file", "write_file", "list_skills", "activate_skill"},
@@ -49,7 +49,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "bash-env", envVars, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", envVars, input)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -84,7 +84,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		if _, err := store.Execute(context.Background(), sessionID, "bash-env", nil, input); err != nil {
+		if _, err := store.Execute(context.Background(), sessionID, "default-env", nil, input); err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
 
@@ -109,7 +109,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "bash-env", nil, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", nil, input)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -134,7 +134,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "bash-env", nil, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", nil, input)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -147,7 +147,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			t.Errorf("Expected call_id 'call-4', got %s", resp.CallID)
 		}
 
-		expectedErr := "Error: tool 'custom_unsupported_tool' is not enabled in environment 'bash-env'"
+		expectedErr := "Error: tool 'custom_unsupported_tool' is not enabled in environment 'default-env'"
 		if resp.Output != expectedErr {
 			t.Errorf("Expected response content '%s', got '%s'", expectedErr, resp.Output)
 		}
@@ -163,7 +163,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "bash-env", nil, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", nil, input)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -185,7 +185,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "bash-env", nil, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", nil, input)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -209,7 +209,7 @@ func TestSessionManager_Execute(t *testing.T) {
 			},
 		}
 
-		resp, err := store.Execute(context.Background(), sessionID, "bash-env", nil, input)
+		resp, err := store.Execute(context.Background(), sessionID, "default-env", nil, input)
 		if err != nil {
 			t.Fatalf("Execute failed: %v", err)
 		}
@@ -252,7 +252,7 @@ listen: ":9090"
 ate:
   ateapi: "grpc.example.com:443"
 environments:
-  - name: "bash-env"
+  - name: "default-env"
     template: "default-env-template"
     atespace: "my-custom-ns"
     allowed_tools:
@@ -287,7 +287,7 @@ environments:
 		t.Fatalf("expected 1 environment, got %d", len(cfg.Environments))
 	}
 	env := cfg.Environments[0]
-	if env.Name != "bash-env" || env.Template != "default-env-template" || env.Atespace != "my-custom-ns" {
+	if env.Name != "default-env" || env.Template != "default-env-template" || env.Atespace != "my-custom-ns" {
 		t.Errorf("unexpected environment mapping: %+v", env)
 	}
 	if len(env.AllowedTools) != 1 || env.AllowedTools[0] != "bash" {

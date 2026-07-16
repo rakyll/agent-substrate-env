@@ -44,7 +44,7 @@ ate:
 
 # Predefined environments mapping client-facing names to Agent Substrate templates.
 environments:
-  - name: "bash-env"
+  - name: "default-env"
     template: "default-env-template"
     atespace: "default"
     allowed_tools:
@@ -60,7 +60,7 @@ environments:
 | --------------- | ------------------ | ------------------------------------------------------- |
 | `listen`        | `:7777`            | Bind address.|
 | `skills_dir`    | `/skills`          | Directory holding agentic skills (see below).           |
-| `environments`  | `bash-env` -> `default-env-template` | List of predefined client-facing environment configuration (template, atespace, allowed tools). |
+| `environments`  | `default-env` -> `default-env-template` | List of predefined client-facing environment configuration (template, atespace, allowed tools). |
 | `ate.ateapi`    | `ateapi.ate-system.svc.cluster.local:443` | Agent Substrate Control API endpoint.|
 
 
@@ -180,15 +180,15 @@ Skills follow progressive disclosure: `list_skills` returns only each skill's na
 export SESSION_ID=123e4567-e89b-12d3-a456-426614174000
 
 # 1. Resume the session
-curl -sX POST localhost:7777/v1/environments/bash-env/sessions/$SESSION_ID/resume
+curl -sX POST localhost:7777/v1/environments/default-env/sessions/$SESSION_ID/resume
 
 # 2. Run a tool call with env vars
-curl -sX POST localhost:7777/v1/environments/bash-env/sessions/$SESSION_ID \
+curl -sX POST localhost:7777/v1/environments/default-env/sessions/$SESSION_ID \
   -H 'Content-Type: application/json' \
   -d '{"env_variables":[{"name":"MY_SECRET","value":"c3ebfdfdk12345..."}],"call_id":"c1","type":"function_call","function":{"name":"bash","arguments":"{\"command\":\"uname -a\"}"}}'
 
 # 3. Suspend when done
-curl -sX POST localhost:7777/v1/environments/bash-env/sessions/$SESSION_ID/suspend
+curl -sX POST localhost:7777/v1/environments/default-env/sessions/$SESSION_ID/suspend
 ```
 
 ## License

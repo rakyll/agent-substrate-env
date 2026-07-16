@@ -11,7 +11,7 @@ ate:
 
 # Predefined environments mapping client-facing names to Agent Substrate templates.
 environments:
-  - name: "bash-env"
+  - name: "default-env"
     template: "default-env-template"
     atespace: "default"
     allowed_tools:

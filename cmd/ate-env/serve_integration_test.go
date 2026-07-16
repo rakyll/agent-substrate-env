@@ -104,7 +104,7 @@ listen: ":0"
 ate:
   ateapi: %q
 environments:
-  - name: "bash-env"
+  - name: "default-env"
     template: %q
     atespace: %q
     allowed_tools:
@@ -176,7 +176,7 @@ func TestIntegration_SessionLifecycle(t *testing.T) {
 	// Actor ids must be unique per run (the actor outlives the test binary on
 	// failure) and valid DNS-1123 labels.
 	sessionID := fmt.Sprintf("ate-env-it-%d", time.Now().UnixNano())
-	sessionURL := srv.URL + "/v1/environments/bash-env/sessions/" + sessionID
+	sessionURL := srv.URL + "/v1/environments/default-env/sessions/" + sessionID
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
@@ -280,7 +280,7 @@ func TestIntegration_SessionLifecycle(t *testing.T) {
 	if err := json.Unmarshal(body, &disallowed); err != nil {
 		t.Fatalf("execute disallowed tool: failed to decode response: %v", err)
 	}
-	if !strings.Contains(disallowed.Output, "not enabled in environment 'bash-env'") {
+	if !strings.Contains(disallowed.Output, "not enabled in environment 'default-env'") {
 		t.Errorf("execute disallowed tool: expected not-enabled error output, got %s", body)
 	}
 
@@ -312,7 +312,7 @@ func TestIntegration_ResumeFailsWhenControlAPIUnavailable(t *testing.T) {
 	lis.Close()
 
 	srv := startService(t, testEnv{ateapiAddr: addr, atespace: "default", template: "default-env-template"})
-	sessionURL := srv.URL + "/v1/environments/bash-env/sessions/it-session-2"
+	sessionURL := srv.URL + "/v1/environments/default-env/sessions/it-session-2"
 
 	code, body := postJSON(t, sessionURL+"/resume", "")
 	if code != http.StatusInternalServerError {
