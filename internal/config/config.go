@@ -52,7 +52,7 @@ func Default() *Config {
 		Environments: []EnvironmentConfig{
 			{
 				Name:         "bash-env",
-				Template:     "bash-env-template",
+				Template:     "default-env-template",
 				Atespace:     "default",
 				AllowedTools: []string{"bash", "read_file", "write_file", "list_dir", "list_skills", "activate_skill"},
 			},

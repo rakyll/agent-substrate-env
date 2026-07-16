@@ -18,7 +18,7 @@
 #   make test-integration ATE_TEST_ATESPACE=ax ATE_TEST_TEMPLATE=ax-harness-template
 ATE_TEST_ATEAPI    ?= localhost:8443
 ATE_TEST_ATESPACE  ?= default
-ATE_TEST_TEMPLATE  ?= bash-env-template
+ATE_TEST_TEMPLATE  ?= default-env-template
 
 .PHONY: build test test-integration port-forward-ateapi vet
 

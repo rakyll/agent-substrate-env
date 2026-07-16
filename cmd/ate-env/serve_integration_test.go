@@ -74,7 +74,7 @@ func realSubstrate(t *testing.T) testEnv {
 		env.atespace = "default"
 	}
 	if env.template == "" {
-		env.template = "bash-env-template"
+		env.template = "default-env-template"
 	}
 	return env
 }
@@ -311,7 +311,7 @@ func TestIntegration_ResumeFailsWhenControlAPIUnavailable(t *testing.T) {
 	addr := lis.Addr().String()
 	lis.Close()
 
-	srv := startService(t, testEnv{ateapiAddr: addr, atespace: "default", template: "bash-env-template"})
+	srv := startService(t, testEnv{ateapiAddr: addr, atespace: "default", template: "default-env-template"})
 	sessionURL := srv.URL + "/v1/environments/bash-env/sessions/it-session-2"
 
 	code, body := postJSON(t, sessionURL+"/resume", "")
@@ -331,7 +331,7 @@ func TestIntegration_ResumeFailsWhenControlAPIUnavailable(t *testing.T) {
 func TestIntegration_Healthz(t *testing.T) {
 	// Healthz has no control-API dependency, so any address works and the test
 	// always runs.
-	srv := startService(t, testEnv{ateapiAddr: "localhost:1", atespace: "default", template: "bash-env-template"})
+	srv := startService(t, testEnv{ateapiAddr: "localhost:1", atespace: "default", template: "default-env-template"})
 
 	resp, err := http.Get(srv.URL + "/healthz")
 	if err != nil {

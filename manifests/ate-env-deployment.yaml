@@ -30,7 +30,7 @@ data:
       ateapi: "ateapi.ate-system.svc.cluster.local:443"
     environments:
       - name: "bash-env"
-        template: "bash-env-template"
+        template: "default-env-template"
         atespace: "default"
         allowed_tools:
           - "bash"
@@ -78,19 +78,27 @@ spec:
           configMap:
             name: ate-env-config
 ---
-apiVersion: ate.gke.io/v1alpha1
+apiVersion: ate.dev/v1alpha1
 kind: WorkerPool
 metadata:
-  name: bash-env-workerpool
+  name: default-env-workerpool
   namespace: default
+  labels:
+    workload: default-env
 spec:
   replicas: 5
+  ateomImage: ${ATEOM_IMAGE}
 ---
-apiVersion: ate.gke.io/v1alpha1
+apiVersion: ate.dev/v1alpha1
 kind: ActorTemplate
 metadata:
-  name: bash-env-template
+  name: default-env-template
   namespace: default
 spec:
-  workerPoolRef:
-    name: bash-env-workerpool
+  workerSelector:
+    matchLabels:
+      workload: default-env
+  pauseImage: "gcr.io/gke-release/pause@sha256:bcbd57ba5653580ec647b16d8163cdd1112df3609129b01f912a8032e48265da"
+  containers:
+    - name: "bash"
+      image: ${ATE_ENV_IMAGE}

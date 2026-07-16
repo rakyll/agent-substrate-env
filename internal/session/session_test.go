@@ -27,7 +27,7 @@ import (
 func TestSessionManager_Execute(t *testing.T) {
 	store := NewSessionManager("localhost:8080", writeTestSkills(t), map[string]EnvDetails{
 		"bash-env": {
-			TemplateName: "bash-env-template",
+			TemplateName: "default-env-template",
 			Atespace:     "default",
 			Tools:        []string{"bash", "read_file", "write_file", "list_skills", "activate_skill"},
 		},
@@ -253,7 +253,7 @@ ate:
   ateapi: "grpc.example.com:443"
 environments:
   - name: "bash-env"
-    template: "bash-env-template"
+    template: "default-env-template"
     atespace: "my-custom-ns"
     allowed_tools:
       - "bash"
@@ -287,7 +287,7 @@ environments:
 		t.Fatalf("expected 1 environment, got %d", len(cfg.Environments))
 	}
 	env := cfg.Environments[0]
-	if env.Name != "bash-env" || env.Template != "bash-env-template" || env.Atespace != "my-custom-ns" {
+	if env.Name != "bash-env" || env.Template != "default-env-template" || env.Atespace != "my-custom-ns" {
 		t.Errorf("unexpected environment mapping: %+v", env)
 	}
 	if len(env.AllowedTools) != 1 || env.AllowedTools[0] != "bash" {

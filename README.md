@@ -45,7 +45,7 @@ ate:
 # Predefined environments mapping client-facing names to Agent Substrate templates.
 environments:
   - name: "bash-env"
-    template: "bash-env-template"
+    template: "default-env-template"
     atespace: "default"
     allowed_tools:
       - "bash"
@@ -60,7 +60,7 @@ environments:
 | --------------- | ------------------ | ------------------------------------------------------- |
 | `listen`        | `:7777`            | Bind address.|
 | `skills_dir`    | `/skills`          | Directory holding agentic skills (see below).           |
-| `environments`  | `bash-env` -> `bash-env-template` | List of predefined client-facing environment configuration (template, atespace, allowed tools). |
+| `environments`  | `bash-env` -> `default-env-template` | List of predefined client-facing environment configuration (template, atespace, allowed tools). |
 | `ate.ateapi`    | `ateapi.ate-system.svc.cluster.local:443` | Agent Substrate Control API endpoint.|
 
 
