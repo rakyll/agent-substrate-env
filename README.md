@@ -35,10 +35,6 @@ Configuration is loaded from `config.yaml` in the working directory. If the file
 # Address/port for this HTTP service to listen on
 listen: ":7777"
 
-# Agent Substrate configuration.
-ate:
-  ateapi: "ateapi.ate-system.svc.cluster.local:443"
-
 # Predefined environments mapping client-facing names to Agent Substrate templates.
 environments:
   - name: "my-env"
