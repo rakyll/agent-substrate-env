@@ -144,13 +144,18 @@ func postJSON(t *testing.T, url string, body string) (int, []byte) {
 
 // waitForActorStatus polls GetActor until the actor reaches one of the wanted
 // statuses, since lifecycle transitions settle asynchronously.
-func waitForActorStatus(t *testing.T, cli ateapipb.ControlClient, actorID string, want ...ateapipb.Actor_Status) *ateapipb.Actor {
+func waitForActorStatus(t *testing.T, cli ateapipb.ControlClient, atespace, actorID string, want ...ateapipb.Actor_Status) *ateapipb.Actor {
 	t.Helper()
 
 	deadline := time.Now().Add(2 * time.Minute)
 	var last *ateapipb.Actor
 	for time.Now().Before(deadline) {
-		resp, err := cli.GetActor(context.Background(), &ateapipb.GetActorRequest{ActorId: actorID})
+		resp, err := cli.GetActor(context.Background(), &ateapipb.GetActorRequest{
+			ActorRef: &ateapipb.ActorRef{
+				Atespace: atespace,
+				Name:     actorID,
+			},
+		})
 		if err == nil {
 			last = resp.GetActor()
 			if slices.Contains(want, last.GetStatus()) {
@@ -175,7 +180,12 @@ func TestIntegration_SessionLifecycle(t *testing.T) {
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		if _, err := cli.DeleteActor(ctx, &ateapipb.DeleteActorRequest{ActorId: sessionID}); err != nil {
+		if _, err := cli.DeleteActor(ctx, &ateapipb.DeleteActorRequest{
+			ActorRef: &ateapipb.ActorRef{
+				Atespace: env.atespace,
+				Name:     sessionID,
+			},
+		}); err != nil {
 			t.Logf("cleanup: failed to delete actor %s: %v", sessionID, err)
 		}
 	})
@@ -192,7 +202,7 @@ func TestIntegration_SessionLifecycle(t *testing.T) {
 
 	// Verify against the real deployment that the actor exists, was derived
 	// from the configured template, and comes up running.
-	actor := waitForActorStatus(t, cli, sessionID,
+	actor := waitForActorStatus(t, cli, env.atespace, sessionID,
 		ateapipb.Actor_STATUS_RUNNING)
 	if got := actor.GetActorTemplateName(); got != env.template {
 		t.Errorf("resume: expected template %q, got %q", env.template, got)
@@ -286,7 +296,7 @@ func TestIntegration_SessionLifecycle(t *testing.T) {
 	if code != http.StatusOK {
 		t.Fatalf("suspend: expected 200, got %d: %s", code, body)
 	}
-	waitForActorStatus(t, cli, sessionID,
+	waitForActorStatus(t, cli, env.atespace, sessionID,
 		ateapipb.Actor_STATUS_SUSPENDING, ateapipb.Actor_STATUS_SUSPENDED)
 }
 

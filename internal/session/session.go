@@ -88,7 +88,10 @@ func (s *SessionManager) Resume(ctx context.Context, sessionID, envName string) 
 
 	// 1. Create Actor (idempotent, ignore AlreadyExists)
 	_, err = cli.CreateActor(ctx, &ateapipb.CreateActorRequest{
-		ActorId:                sessionID,
+		ActorRef: &ateapipb.ActorRef{
+			Atespace: s.atespace,
+			Name:     sessionID,
+		},
 		ActorTemplateNamespace: s.atespace,
 		ActorTemplateName:      templateName,
 	})
@@ -99,7 +102,10 @@ func (s *SessionManager) Resume(ctx context.Context, sessionID, envName string) 
 	// 2. Resume Actor
 	log.Printf("Resuming actor %s...", sessionID)
 	_, err = cli.ResumeActor(ctx, &ateapipb.ResumeActorRequest{
-		ActorId: sessionID,
+		ActorRef: &ateapipb.ActorRef{
+			Atespace: s.atespace,
+			Name:     sessionID,
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to resume actor: %w", err)
@@ -123,7 +129,10 @@ func (s *SessionManager) Suspend(ctx context.Context, sessionID string) error {
 
 	log.Printf("Suspending actor %s...", sessionID)
 	_, err = cli.SuspendActor(ctx, &ateapipb.SuspendActorRequest{
-		ActorId: sessionID,
+		ActorRef: &ateapipb.ActorRef{
+			Atespace: s.atespace,
+			Name:     sessionID,
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to suspend actor: %w", err)
