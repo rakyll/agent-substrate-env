@@ -12,20 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# ---------------------------------------------------------------------------
-# Namespace
-# ---------------------------------------------------------------------------
 apiVersion: v1
 kind: Namespace
 metadata:
   name: ate-env
 ---
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-# Mounted into the container at /etc/ate-env and passed via `--config`. The
-# ate.ateapi endpoint points at the Agent Substrate control API in the
-# ate-system namespace.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -49,9 +40,6 @@ data:
           - "list_skills"
           - "activate_skill"
 ---
-# ---------------------------------------------------------------------------
-# ate-env service
-# ---------------------------------------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -90,9 +78,14 @@ spec:
           configMap:
             name: ate-env-config
 ---
-# ---------------------------------------------------------------------------
-# Agent Substrate Actor Template
-# ---------------------------------------------------------------------------
+apiVersion: ate.gke.io/v1alpha1
+kind: WorkerPool
+metadata:
+  name: bash-env-workerpool
+  namespace: default
+spec:
+  replicas: 5
+---
 apiVersion: ate.gke.io/v1alpha1
 kind: ActorTemplate
 metadata:
@@ -101,4 +94,3 @@ metadata:
 spec:
   workerPoolRef:
     name: bash-env-workerpool
-
